@@ -63,7 +63,6 @@ export default class Comic {
     let lastOff: number = Date.now()
     let lastOn: number = 0
     let keyHeld = false
-    let holdTimeout: number = null
 
     const setOn = (isOn: boolean) => {
       inputEl.checked = isOn
@@ -78,23 +77,11 @@ export default class Comic {
 
     const handleDown = () => {
       clearTimeout(this.playTimeout)
-      clearTimeout(holdTimeout)
-      holdTimeout = window.setTimeout(() => {
-        setOn(true)
-        holdTimeout = null
-      }, HOLD_DELAY)
+      setOn(true)
     }
 
     const handleUp = () => {
-      if (holdTimeout) {
-        setOn(!inputEl.checked)
-      } else {
-        setOn(false)
-      }
-
-      clearTimeout(holdTimeout)
-      holdTimeout = null
-
+      setOn(false)
       inputEl.focus()
     }
 
