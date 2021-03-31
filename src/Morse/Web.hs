@@ -5,6 +5,8 @@
 {-# LANGUAGE TypeOperators #-}
 module Morse.Web
  ( waiMorse
+ , MorseAPI, morseAPI
+ , morseServer
  ) where
 
 import           Data.Text (Text)
