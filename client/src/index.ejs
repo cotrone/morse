@@ -8,7 +8,7 @@
     <!-- Comic HTML -->
     <div id="comic" style="height: <%= comic.height %>px"></div>
 
-    <!-- Embed -->
+    <!-- Embeds. Hide morse.js somewhere in the <head> -->
     <%= tags.bodyTags %>
     <script>
       BeepComic.draw(document.getElementById('comic'))
