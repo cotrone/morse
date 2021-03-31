@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title><%= comic.name %></title>
+  </head>
+  <body>
+    <!-- Comic HTML -->
+    <div id="comic" style="height: <%= comic.height %>px"></div>
+
+    <!-- Embed -->
+    <%= tags.bodyTags %>
+    <script>
+      BeepComic.draw(document.getElementById('comic'))
+    </script>
+  </body>
+</html>
