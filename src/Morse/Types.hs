@@ -9,6 +9,7 @@
 module Morse.Types
  ( DialogTrans (..)
  , MorseTree(..)
+ , StateMatcher(..)
  , MorseQuery, MorseQueryCI
  , StateChange(..), parseStateChange
  , MorseResponder(..)
@@ -44,9 +45,15 @@ parseStateChange "-" = SameState
 parseStateChange "!" = ClearState
 parseStateChange  s  = SetState s
 
+data StateMatcher a
+ = AnyState        -- ^ Always can be matched.
+ | TableState      -- ^ Match any state in the table.
+ | SpecificState a -- ^ Only match a given state.
+ deriving (Read, Show, Eq, Ord, Functor) 
+
 data DialogTrans a
   = Transition
-    { _transStartState  :: Maybe a
+    { _transStartState  :: StateMatcher a
     , _transQuery       :: Text
     , _transResp        :: Text
     , _transResultState :: StateChange a
@@ -56,7 +63,7 @@ data DialogTrans a
 -- | For loading tbl files.
 instance CSV.FromNamedRecord (DialogTrans Text) where
   parseNamedRecord r =
-    Transition <$> ((\case { "*" -> Nothing; s -> Just s }) <$> (r CSV..: "From"))
+    Transition <$> ((\case { "*" -> AnyState; "&" -> TableState; s -> SpecificState s }) <$> (r CSV..: "From"))
                <*>  r CSV..: "Query"
                <*>  r CSV..: "Response"
                <*> (parseStateChange <$> (r CSV..: "Destination"))
@@ -98,16 +105,20 @@ instance JS.ToJSON MorseResponse where
   toJSON     (MorseResponse say st) = JS.object [ "state" JS..= st,   "say" JS..= say ]
   toEncoding (MorseResponse say st) = JS.pairs  ( "state" JS..= st <> "say" JS..= say )
 
+type Table = Text
+
 -- A set of things to say when we don't understamd, and known questions with their responses.
 data MorseTree
   = MorseTree
     { _mtDefState :: UUID
     -- ^ The state to respond with when we reset state or have none to start with.
-    , _mtDialog   :: Map MorseQueryCI (Set MorseResponder)
-    -- ^ Mappings from (State, Text) to response and state transition.
+    , _mtOpeners  :: Map (CI Text) (Set MorseResponder)
+    -- ^ matchers on the open state.
+    , _mtTables   :: Map Table (Map MorseQueryCI (Set MorseResponder))
+    -- ^ Mappings from (State, Text) to response and state transition for a given table.
     , _mtConfused :: Set MorseResponder
     -- ^ Responses to use when confused
-    , _mtStateDecode :: Map UUID (Text, Text)
+    , _mtStateDecode :: Map UUID (Table, Text)
     -- ^ A decoding scheme from UUID state rep to the file and state token inside it.
     , _mtDefResp  :: Text
     -- ^ A response to use if all else fails.
@@ -116,9 +127,10 @@ data MorseTree
 
 -- | Left bias.
 instance Semigroup MorseTree where
-  (MorseTree ds dtl cl dl def) <> (MorseTree _ dtr cr dr _) =
+  (MorseTree ds dol dtl cl dl def) <> (MorseTree _ dor dtr cr dr _) =
     MorseTree ds
-              (Map.unionWith Set.union dtl dtr)
+              (Map.unionWith Set.union dol dor)
+              (Map.unionWith (Map.unionWith Set.union) dtl dtr)
               (cl `Set.union` cr)
               (dl `Map.union` dr)
               def

@@ -5,3 +5,4 @@
 2,"Say yes","Fine",3
 3,"Say yes","Yes",-
 *,"Do what you will","I will",!
+&,"Are you answering the question?","I am",-

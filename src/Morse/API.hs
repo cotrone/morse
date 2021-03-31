@@ -6,11 +6,12 @@ module Morse.API where
 
 import           Control.Applicative
 import           Control.Monad.Reader
-import           Data.Bifunctor
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import           Data.CaseInsensitive  (CI)
 import qualified Data.CaseInsensitive as CI
 import qualified Data.Csv as CSV
+import           Data.Either
 import           Data.Foldable
 import           Data.List.NonEmpty (NonEmpty ((:|)))
 import qualified Data.Map.Strict as Map
@@ -29,13 +30,16 @@ import           Morse.Types
 import           System.Directory
 import           System.FilePath
 
+insensitize :: Text -> CI Text
+insensitize = CI.mk . T.replace " " ""
+
 insensitizeQuery :: MorseQuery -> MorseQueryCI
-insensitizeQuery = fmap (CI.mk . T.replace " " "")
+insensitizeQuery = fmap insensitize
 
 lookupMorse :: Morse m => MorseQuery -> m MorseResponse
 lookupMorse q' = do
+    (mt@(MorseTree { _mtOpeners=opn, _mtTables=tbls, _mtConfused=cr, _mtStateDecode=sdc })) <- ask
     let q = insensitizeQuery q'
-    (mt@(MorseTree {_mtDialog=t, _mtConfused=cr })) <- ask
     pure . applyResponder mt q =<< randomSelection =<<
       (maybe
        -- If we failed, its novel so log it and give a confused response.
@@ -43,9 +47,13 @@ lookupMorse q' = do
        -- But first try to actually find it.
        pure $
          -- Try looking it up with its state.
-             (Map.lookup q t)
+             (do
+                 st <- fst q
+                 tbl <- join $ ((`Map.lookup` tbls) . fst) <$> Map.lookup st sdc
+                 -- Look it up directly, failing it that look up an open match in the table.
+                 Map.lookup q tbl <|> Map.lookup (Nothing, snd q) tbl)
          -- Try looking it up like its from an empty state.
-         <|> (Map.lookup (Nothing, snd q) t)
+         <|> (Map.lookup (snd q) opn)
       )
   where
     randomSelection = sample . randomElement . Set.toList
@@ -64,15 +72,17 @@ load defState defResp dir = do
   allContent <- listDirectory dir
   let tbls = (dir </>) <$> filter ("tbl" `isExtensionOf`) allContent
   let rsps = (dir </>) <$> filter ("rsp" `isExtensionOf`) allContent
-  let blnk = MorseTree defState mempty mempty mempty defResp
+  let blnk = MorseTree defState mempty mempty mempty mempty defResp
   (<>) <$> ((sconcat . (blnk :|)) <$> forM tbls (readMorseTable defState defResp))
        <*> ((sconcat . (blnk :|)) <$> forM rsps (readMorseResponses defState defResp))
 
 uuidStatePair :: UUID -> (Text, Text) -> (UUID, (Text, Text))
 uuidStatePair base (tpl@(fl, st)) = (V5.generateNamed base . BS.unpack . TE.encodeUtf8 $ fl<>st, tpl)
 
-splitDialogTrans :: DialogTrans (UUID, (Text, Text)) -> (MorseQuery, Set MorseResponder)
-splitDialogTrans (Transition ss q rsp rs) = ((fst <$> ss, q), Set.singleton $ MorseResponder rsp (fst <$> rs))
+splitDialogTrans :: DialogTrans UUID -> Either (CI Text, Set MorseResponder) (MorseQueryCI, Set MorseResponder)
+splitDialogTrans (Transition AnyState q rsp rs) = Left (insensitize q, Set.singleton $ MorseResponder rsp rs)
+splitDialogTrans (Transition TableState q rsp rs) = Right (insensitizeQuery (Nothing, q), Set.singleton $ MorseResponder rsp rs)
+splitDialogTrans (Transition (SpecificState ss) q rsp rs) = Right (insensitizeQuery (Just ss, q), Set.singleton $ MorseResponder rsp rs)
 
 readMorseTable :: UUID -> Text -> FilePath -> IO MorseTree
 readMorseTable defState defResp fp = do
@@ -80,11 +90,14 @@ readMorseTable defState defResp fp = do
   case CSV.decodeByName csvData of
     Left err -> fail err
     Right (_, (v'::V.Vector (DialogTrans Text))) -> do
-      let v = (fmap (uuidStatePair defState . (T.pack $ takeBaseName fp,))) <$> v'
+      let tblName = T.pack $ takeBaseName fp
+      let v = (fmap (uuidStatePair defState . (tblName,))) <$> v'
+      let (opns, tbls) = partitionEithers . toList $ (splitDialogTrans . fmap fst) <$> v
       pure $
         MorseTree
           defState
-          (Map.fromListWith Set.union . toList $ (first insensitizeQuery . splitDialogTrans) <$> v)
+          (Map.fromListWith Set.union opns)
+          (Map.singleton tblName $ Map.fromListWith Set.union tbls)
           mempty
           (Map.fromList .
            mapMaybe (\case { SetState mapping -> Just mapping; _ -> Nothing }) .
@@ -98,4 +111,4 @@ readMorseResponses defState defResp fp = do
   case CSV.decodeByName csvData of
     Left err -> fail err
     Right (_, (v::V.Vector MorseResponder)) ->
-      pure $ MorseTree defState mempty (Set.fromList . toList $ v) mempty defResp
+      pure $ MorseTree defState mempty mempty (Set.fromList . toList $ v) mempty defResp

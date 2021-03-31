@@ -47,6 +47,10 @@ transitionTests = testGroup "Transitions"
       , ((1, (Just u_4c, "Say yes")),            (MorseResponse "Yes" u_4c, []))
       , ((6, (Just u_b7, "Say yes")),            (MorseResponse "Fine" u_4c, []))
       , ((1, (Just u_b7, "Do what you will")),   (MorseResponse "I will" defState, []))
+      , ((1, (Nothing,   "Are you answering the question?")), (MorseResponse "I'm done with this" defState, [(Nothing, "Are you answering the question?")]))
+      , ((1, (Just u_4c, "Are you answering the question?")), (MorseResponse "I am" u_4c, []))
+      , ((1, (Just u_b7, "Are you answering the question?")), (MorseResponse "I am" u_b7, []))
+      , ((1, (Just u_de, "Are you answering the question?")), (MorseResponse "I am" u_de, []))
       ]
   ]
 
@@ -61,15 +65,20 @@ golden :: MorseTree
 golden =
   MorseTree
     defState
-    [ ((Nothing,"Hello"), [MorseResponder "Hello to you too!" ClearState])
-    , ((Nothing,"Sayyes"), [MorseResponder "No" $ SetState u_de])
-    , ((Nothing,"Whatisyourname?"), [MorseResponder "Morse" ClearState])
-    , ((Nothing,"Whoareyou?"), [MorseResponder "Morse" ClearState])
-    , ((Nothing,"Dowhatyouwill"), [MorseResponder "I will" ClearState])
-    , ((Just u_4c,"Sayyes"), [MorseResponder "Yes" $ SameState])
-    , ((Just u_b7,"Sayyes"), [MorseResponder "Fine" $ SetState u_4c
-                              ,MorseResponder "Yes" $ SetState u_4c])
-    , ((Just u_de,"Sayyes"), [MorseResponder "No" $ SetState u_b7])
+    [ ("Hello", [MorseResponder "Hello to you too!" ClearState])
+    , ("Sayyes", [MorseResponder "No" $ SetState u_de])
+    , ("Whatisyourname?", [MorseResponder "Morse" ClearState])
+    , ("Whoareyou?", [MorseResponder "Morse" ClearState])
+    , ("Dowhatyouwill", [MorseResponder "I will" ClearState])
+    ]
+    [ ( "SayYes",
+        [ ((Just u_4c,"Sayyes"), [MorseResponder "Yes" SameState])
+        , ((Just u_b7,"Sayyes"), [MorseResponder "Fine" $ SetState u_4c
+                                 ,MorseResponder "Yes" $ SetState u_4c])
+        , ((Just u_de,"Sayyes"), [MorseResponder "No" $ SetState u_b7])
+        ,((Nothing, "Areyouansweringthequestion?"), [MorseResponder "I am" SameState])
+        ])
+    , ( "General", [])
     ]
     [ MorseResponder "I don't understand" SameState
     , MorseResponder "I'm done with this" ClearState

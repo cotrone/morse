@@ -4,7 +4,8 @@ The data files are CSVs of 4 columns:
 
 where:
  "From" is one of:
-   - '*' for saying it is the start of an interaction
+   - '*' for saying it is the start of an interaction, it can match on any state (though specific states are prefered first).
+   - '&' for matching any state in a given table only (Specific states are still prefered first).
    - some alphanumeric value to say it is continuing from a given state
   "Query" is what we're matching on from the user.
   "Response" is what we send back to the user.
@@ -18,6 +19,11 @@ If we match on an initial state, and the destination is a final state, we do not
 
 We return a (Response, stat).
 
+For clarity, given a (State, Query) we, in order:
+ - Look for (State, Query) in the table
+ - Look for (match on any state in this table, Query)
+ - Look for (initial state, Query) in the the entire dialog tree
+ - answer with a confusion response
 
 
 The "content" directory contains:
