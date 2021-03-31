@@ -1,8 +1,9 @@
-import type { BeepComicGlobal, MorseGlobal } from './index'
+import type { BeepComicGlobal } from './index'
+import type { MorseGlobal } from './morseIndex'
 
 declare global {
   interface Window {
     BeepComic: BeepComicGlobal
-    morse: MorseGlobal
+    morse: typeof MorseGlobal
   }
 }

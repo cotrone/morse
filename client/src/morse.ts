@@ -1,5 +1,6 @@
-// via https://github.com/ozdemirburak/morse-decoder/blob/0d750bac6c4ab7000c32fcc7c662b87e2faa55bd/src/index.js
+import BaseX from '@multiformats/base-x'
 
+// via https://github.com/ozdemirburak/morse-decoder/blob/0d750bac6c4ab7000c32fcc7c662b87e2faa55bd/src/index.js
 export const toMorse = new Map([
   ['0', '-----'],
   ['1', '.----'],
@@ -75,4 +76,18 @@ export function encodeMorse(text: string) {
     .map((c) => toMorse.get(c.toUpperCase()) || null)
     .filter((x) => x)
     .join(' ')
+}
+
+export const packedMorseEncoder = BaseX([...toMorse.keys()].join(''))
+
+export function encodePackedMorse(data: string) {
+  const textEncoder = new TextEncoder()
+  const packed = packedMorseEncoder.encode(textEncoder.encode(data))
+  return encodeMorse(packed)
+}
+
+export function decodePackedMorse(morse: string) {
+  const data = packedMorseEncoder.decode(decodeMorse(morse))
+  const textDecoder = new TextDecoder()
+  return textDecoder.decode(data)
 }

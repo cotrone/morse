@@ -1,5 +1,4 @@
 import { apiEndpoint } from '../comic'
-import { decodeMorse, encodeMorse, toMorse } from './morse'
 
 const HOLD_DELAY = 150
 const PLAYBACK_DELAY = 250
@@ -113,41 +112,46 @@ export default class Comic {
     const lines = []
     lines.push(' MORSE CODE ')
     lines.push('------------')
-    for (const [char, code] of toMorse) {
-      lines.push(` ${char} : ${code}`)
+    for (const [char, code] of window.morse.table) {
+      lines.push(` ${char} [${code}]`)
     }
     console.log(lines.join('\n'))
   }
 
   interpretClicks() {
     const morse = clickTimesToMorse(this.clickTimes).replace(/^ /, '') // Strip a preceding space
-    const text = decodeMorse(morse)
 
     clearTimeout(this.sendTimeout)
-    this.sendTimeout = window.setTimeout(async () => {
-      console.log(`Said: [${morse}] "${text}"`)
-
-      const newClickTimes: Array<number> = []
-      this.clickTimes = newClickTimes
-
-      if (!text.length) {
-        return
-      }
-
-      const responseText = await this.client.say(text)
-
-      if (this.clickTimes != newClickTimes || this.clickTimes.length) {
-        // If the user has input anything since, disregard this response.
-        return
-      }
-      this.playback(responseText)
+    this.sendTimeout = window.setTimeout(() => {
+      this.send(morse)
     }, SEND_DELAY)
+  }
+
+  async send(morse: string) {
+    const text = window.morse.decode(morse)
+
+    const newClickTimes: Array<number> = []
+    this.clickTimes = newClickTimes
+
+    if (!text.length) {
+      return
+    }
+
+    console.log(`Said: [${morse}] "${text}"`)
+
+    const responseText = await this.client.say(text)
+
+    if (this.clickTimes != newClickTimes || this.clickTimes.length) {
+      // If the user has input anything since, disregard this response.
+      return
+    }
+    this.playback(responseText)
   }
 
   playback(text: string) {
     const inputEl = this.el.querySelector('input')
     this.playbackText = text
-    const morse = encodeMorse(text)
+    const morse = window.morse.encode(text)
 
     const delays: Array<[boolean, number]> = []
     for (const c of morse) {
@@ -170,7 +174,7 @@ export default class Comic {
       inputEl.checked = isOn
 
       if (idx === delays.length - 1 && !hasPrinted) {
-        console.log(`Received: [${encodeMorse(text)}] "${text}"`)
+        console.log(`Received: [${window.morse.encode(text)}] "${text}"`)
         hasPrinted = true
       }
 

@@ -1,6 +1,5 @@
 import comicData from '../comic'
 import Comic from './Comic'
-import { decodeMorse, encodeMorse } from './morse'
 
 export class BeepComicGlobal {
   comicEl: HTMLDivElement = null
@@ -24,20 +23,21 @@ export class BeepComicGlobal {
     comicEl.title = comicData.alt
     this.comicEl = comicEl
   }
-}
 
-export const MorseGlobal = {
-  decode: decodeMorse,
-  encode: encodeMorse,
+  send: (text: string) => void
 }
 
 function main() {
   const { comicEl } = window.BeepComic
+
   const comic = new Comic(comicEl)
   comic.start()
+
+  window.BeepComic.send = (morse: string) => {
+    comic.send(morse)
+  }
 }
 
 document.addEventListener('DOMContentLoaded', main)
 
 window.BeepComic = new BeepComicGlobal()
-window.morse = MorseGlobal
