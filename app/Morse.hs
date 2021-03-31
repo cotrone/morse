@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import           Control.Monad.Trans
+import           Control.Monad.IO.Class
 import           Data.Random.Source.StdGen
 import           Morse.API
 import           Morse.Types
