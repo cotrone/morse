@@ -50,6 +50,7 @@ executable morse
     import: deps
     hs-source-dirs:   app
     main-is:          Morse.hs
+    ghc-options: -O2 -rtsopts -threaded
     build-depends:
         morse
       , warp ^>= 3.3
