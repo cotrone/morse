@@ -114,34 +114,39 @@ export default class Comic {
     lines.push(' MORSE CODE ')
     lines.push('------------')
     for (const [char, code] of toMorse) {
-      lines.push(` ${char} : ${code}`)
+      lines.push(` ${char} [${code}]`)
     }
     console.log(lines.join('\n'))
   }
 
   interpretClicks() {
     const morse = clickTimesToMorse(this.clickTimes).replace(/^ /, '') // Strip a preceding space
-    const text = decodeMorse(morse)
 
     clearTimeout(this.sendTimeout)
-    this.sendTimeout = window.setTimeout(async () => {
-      console.log(`Said: [${morse}] "${text}"`)
-
-      const newClickTimes: Array<number> = []
-      this.clickTimes = newClickTimes
-
-      if (!text.length) {
-        return
-      }
-
-      const responseText = await this.client.say(text)
-
-      if (this.clickTimes != newClickTimes || this.clickTimes.length) {
-        // If the user has input anything since, disregard this response.
-        return
-      }
-      this.playback(responseText)
+    this.sendTimeout = window.setTimeout(() => {
+      this.send(morse)
     }, SEND_DELAY)
+  }
+
+  async send(morse: string) {
+    const text = decodeMorse(morse)
+
+    const newClickTimes: Array<number> = []
+    this.clickTimes = newClickTimes
+
+    if (!text.length) {
+      return
+    }
+
+    console.log(`Said: [${morse}] "${text}"`)
+
+    const responseText = await this.client.say(text)
+
+    if (this.clickTimes != newClickTimes || this.clickTimes.length) {
+      // If the user has input anything since, disregard this response.
+      return
+    }
+    this.playback(responseText)
   }
 
   playback(text: string) {

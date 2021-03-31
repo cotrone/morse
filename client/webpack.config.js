@@ -12,7 +12,7 @@ function buildComic(env, argv) {
       comic: './src/index.ts',
     },
     output: {
-      path: path.resolve(__dirname, 'dist/comic'),
+      path: path.resolve(__dirname, 'dist'),
       filename: '[name].js',
     },
     module: {

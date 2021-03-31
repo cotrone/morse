@@ -24,6 +24,8 @@ export class BeepComicGlobal {
     comicEl.title = comicData.alt
     this.comicEl = comicEl
   }
+
+  send: (text: string) => void
 }
 
 export const MorseGlobal = {
@@ -33,8 +35,13 @@ export const MorseGlobal = {
 
 function main() {
   const { comicEl } = window.BeepComic
+
   const comic = new Comic(comicEl)
   comic.start()
+
+  window.BeepComic.send = (morse: string) => {
+    comic.send(morse)
+  }
 }
 
 document.addEventListener('DOMContentLoaded', main)
