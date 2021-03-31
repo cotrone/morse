@@ -1,0 +1,7 @@
+"From","Query","Response","Destination"
+*,"Say yes","No",1
+1,"Say yes","No",2
+2,"Say yes","Yes",3
+2,"Say yes","Fine",3
+3,"Say yes","Yes",-
+*,"Do what you will","I will",!

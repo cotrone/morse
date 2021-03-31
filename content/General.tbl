@@ -1,0 +1,4 @@
+"From","Query","Response","Destination"
+*,"Hello","Hello to you too!",!
+*,"Who are you?","Morse",!
+*,"What is your name?","Morse",!

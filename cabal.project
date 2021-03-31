@@ -1,0 +1,4 @@
+packages: .
+
+package morse
+  test-show-details:streaming

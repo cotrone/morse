@@ -1,0 +1,35 @@
+The data files are CSVs of 4 columns:
+
+ "From","Query","Response","Destination"
+
+where:
+ "From" is one of:
+   - '*' for saying it is the start of an interaction
+   - some alphanumeric value to say it is continuing from a given state
+  "Query" is what we're matching on from the user.
+  "Response" is what we send back to the user.
+  "Destination" is one of:
+   - And alphanum that represents the resultant state after the interaction
+   - "!" to reset the interaction sequence.
+   - "-" to not change the state.
+
+Matching is done on (state, query), prefering to match the alphanum state token's specified responses but failing that looks up any response for an initial satte.
+If we match on an initial state, and the destination is a final state, we do not change our state token.
+
+We return a (Response, stat).
+
+
+
+The "content" directory contains:
+ - ".tbl" CSV as above, of spexcific interaction sets. States are scoped to a given tbl file.
+ - ".rsp" files with only the "Response" and "Destination" columns, which we use when no response is a close enough match. Only '!' and '-' state changes make sense here due to locality of state tokens.
+
+
+API:
+ - GET /{UUID}/{URL encoded query}/
+ - GET /{URL encoded query}/
+
+both respond with JSON:
+ { "state": UUID
+ , "say": text
+ }
