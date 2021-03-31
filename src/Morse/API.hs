@@ -6,8 +6,10 @@ module Morse.API where
 
 import           Control.Applicative
 import           Control.Monad.Reader
+import           Data.Bifunctor
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.CaseInsensitive as CI
 import qualified Data.Csv as CSV
 import           Data.Foldable
 import           Data.List.NonEmpty (NonEmpty ((:|)))
@@ -27,13 +29,17 @@ import           Morse.Types
 import           System.Directory
 import           System.FilePath
 
+insensitizeQuery :: MorseQuery -> MorseQueryCI
+insensitizeQuery = fmap (CI.mk . T.replace " " "")
+
 lookupMorse :: Morse m => MorseQuery -> m MorseResponse
-lookupMorse q = do
+lookupMorse q' = do
+    let q = insensitizeQuery q'
     (mt@(MorseTree {_mtDialog=t, _mtConfused=cr })) <- ask
     pure . applyResponder mt q =<< randomSelection =<<
       (maybe
        -- If we failed, its novel so log it and give a confused response.
-       (logNovel q >> pure cr)
+       (logNovel q' >> pure cr)
        -- But first try to actually find it.
        pure $
          -- Try looking it up with its state.
@@ -44,7 +50,7 @@ lookupMorse q = do
   where
     randomSelection = sample . randomElement . Set.toList
 
-applyResponder :: MorseTree -> MorseQuery -> MorseResponder -> MorseResponse
+applyResponder :: MorseTree -> MorseQueryCI -> MorseResponder -> MorseResponse
 applyResponder (MorseTree { _mtDefState = defUUID }) (os, _) (MorseResponder stmt sc) =
   MorseResponse stmt $ case sc of
                          SameState   -> fromMaybe defUUID os
@@ -78,7 +84,7 @@ readMorseTable defState defResp fp = do
       pure $
         MorseTree
           defState
-          (Map.fromListWith Set.union . toList $ splitDialogTrans <$> v)
+          (Map.fromListWith Set.union . toList $ (first insensitizeQuery . splitDialogTrans) <$> v)
           mempty
           (Map.fromList .
            mapMaybe (\case { SetState mapping -> Just mapping; _ -> Nothing }) .

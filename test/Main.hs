@@ -35,6 +35,7 @@ transitionTests = testGroup "Transitions"
       (\(r, q) er -> (runMockMorse golden (mkStdGen r) $ lookupMorse q) == er)
       [ ((1, (Nothing,   "Hello")),              (MorseResponse "Hello to you too!" defState, []))
       , ((1, (Nothing,   "What is your name?")), (MorseResponse "Morse" defState, []))
+      , ((1, (Nothing,   "whatisyourname?")),    (MorseResponse "Morse" defState, []))
       , ((1, (Nothing,   "Who are you?")),       (MorseResponse "Morse" defState, []))
       , ((1, (Nothing,   "Unexpected")),         (MorseResponse "I'm done with this" defState, [(Nothing,   "Unexpected")]))
       , ((6, (Nothing,   "Unexpected")),         (MorseResponse "I don't understand" defState, [(Nothing,   "Unexpected")]))
@@ -61,14 +62,14 @@ golden =
   MorseTree
     defState
     [ ((Nothing,"Hello"), [MorseResponder "Hello to you too!" ClearState])
-    , ((Nothing,"Say yes"), [MorseResponder "No" $ SetState u_de])
-    , ((Nothing,"What is your name?"), [MorseResponder "Morse" ClearState])
-    , ((Nothing,"Who are you?"), [MorseResponder "Morse" ClearState])
-    , ((Nothing,"Do what you will"), [MorseResponder "I will" ClearState])
-    , ((Just u_4c,"Say yes"), [MorseResponder "Yes" $ SameState])
-    , ((Just u_b7,"Say yes"), [MorseResponder "Fine" $ SetState u_4c
+    , ((Nothing,"Sayyes"), [MorseResponder "No" $ SetState u_de])
+    , ((Nothing,"Whatisyourname?"), [MorseResponder "Morse" ClearState])
+    , ((Nothing,"Whoareyou?"), [MorseResponder "Morse" ClearState])
+    , ((Nothing,"Dowhatyouwill"), [MorseResponder "I will" ClearState])
+    , ((Just u_4c,"Sayyes"), [MorseResponder "Yes" $ SameState])
+    , ((Just u_b7,"Sayyes"), [MorseResponder "Fine" $ SetState u_4c
                               ,MorseResponder "Yes" $ SetState u_4c])
-    , ((Just u_de,"Say yes"), [MorseResponder "No" $ SetState u_b7])
+    , ((Just u_de,"Sayyes"), [MorseResponder "No" $ SetState u_b7])
     ]
     [ MorseResponder "I don't understand" SameState
     , MorseResponder "I'm done with this" ClearState

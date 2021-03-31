@@ -9,7 +9,7 @@
 module Morse.Types
  ( DialogTrans (..)
  , MorseTree(..)
- , MorseQuery
+ , MorseQuery, MorseQueryCI
  , StateChange(..), parseStateChange
  , MorseResponder(..)
  , MorseResponse(..)
@@ -21,12 +21,13 @@ import           Control.Monad.Reader
 import           Control.Monad.State
 import           Control.Monad.Writer
 import           Control.Monad.RWS.Strict
-import           Data.Random.Source.StdGen
 import qualified Data.Aeson as JS
+import           Data.CaseInsensitive  (CI)
 import qualified Data.Csv as CSV
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import           Data.Random.Source
+import           Data.Random.Source.StdGen
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Text (Text)
@@ -61,6 +62,7 @@ instance CSV.FromNamedRecord (DialogTrans Text) where
                <*> (parseStateChange <$> (r CSV..: "Destination"))
 
 type MorseQuery = (Maybe UUID, Text)
+type MorseQueryCI = (Maybe UUID, CI Text)
 
 -- | Used to construct a response given we have several different methods of changing state.
 data MorseResponder
@@ -101,7 +103,7 @@ data MorseTree
   = MorseTree
     { _mtDefState :: UUID
     -- ^ The state to respond with when we reset state or have none to start with.
-    , _mtDialog   :: Map MorseQuery (Set MorseResponder)
+    , _mtDialog   :: Map MorseQueryCI (Set MorseResponder)
     -- ^ Mappings from (State, Text) to response and state transition.
     , _mtConfused :: Set MorseResponder
     -- ^ Responses to use when confused

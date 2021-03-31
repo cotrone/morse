@@ -8,7 +8,6 @@ module Morse.Web
  ) where
 
 import           Data.Text (Text)
-import qualified Data.Text as T
 import           Data.UUID (UUID)
 import           Morse.API
 import           Morse.Types
@@ -19,8 +18,8 @@ type MorseAPI
  = MorseSay
 
 type MorseSay
-  =    "say" :> Capture "uuid" UUID :> CaptureAll "segments" Text :> Get '[JSON] MorseResponse
-  :<|> "say" :>                        CaptureAll "segments" Text :> Get '[JSON] MorseResponse
+  =    "say" :> Capture "uuid" UUID :> Capture "phrase" Text :> Get '[JSON] MorseResponse
+  :<|> "say" :>                        Capture "phrase" Text :> Get '[JSON] MorseResponse
 
 morseAPI :: Proxy MorseAPI
 morseAPI = Proxy
@@ -33,13 +32,12 @@ waiMorse runMorse = serve morseAPI (hoistServer morseAPI runMorse morseServer)
 morseServer :: Morse m => ServerT MorseAPI m
 morseServer = sayWith :<|> sayWithout
 
-sayWith :: Morse m => UUID -> [Text] -> m MorseResponse
+sayWith :: Morse m => UUID -> Text -> m MorseResponse
 sayWith u = say (Just u)
 
-sayWithout :: Morse m => [Text] -> m MorseResponse
+sayWithout :: Morse m => Text -> m MorseResponse
 sayWithout = say Nothing
 
-say :: Morse m => Maybe UUID -> [Text] -> m MorseResponse
-say fromState parts = do
-  let phrase =  T.intercalate " " parts
+say :: Morse m => Maybe UUID -> Text -> m MorseResponse
+say fromState phrase = do
   lookupMorse (fromState, phrase)

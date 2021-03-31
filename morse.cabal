@@ -25,6 +25,7 @@ common deps
      aeson ^>= 1.5
    , base >= 4.8 && < 4.15
    , bytestring ^>= 0.10
+   , case-insensitive ^>= 1.2
    , cassava ^>= 0.5
    , containers ^>= 0.6
    , directory ^>= 1.3
