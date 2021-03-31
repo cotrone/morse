@@ -17,7 +17,7 @@ export class BeepComicGlobal {
     )
     comicEl.innerHTML = `
       <label style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center">
-        <input type="checkbox">
+        <input type="checkbox" style="outline: none">
       </label>
     `
     comicEl.title = comicData.alt

@@ -62,6 +62,7 @@ export default class Comic {
 
     let lastOff: number = Date.now()
     let lastOn: number = 0
+    let keyHeld = false
     let holdTimeout: number = null
 
     const setOn = (isOn: boolean) => {
@@ -75,7 +76,7 @@ export default class Comic {
       this.interpretClicks()
     }
 
-    const handleDown = (ev: MouseEvent) => {
+    const handleDown = () => {
       clearTimeout(this.playTimeout)
       clearTimeout(holdTimeout)
       holdTimeout = window.setTimeout(() => {
@@ -84,7 +85,7 @@ export default class Comic {
       }, HOLD_DELAY)
     }
 
-    const handleUp = (ev: MouseEvent) => {
+    const handleUp = () => {
       if (holdTimeout) {
         setOn(!inputEl.checked)
       } else {
@@ -93,13 +94,27 @@ export default class Comic {
 
       clearTimeout(holdTimeout)
       holdTimeout = null
+
+      inputEl.focus()
     }
 
     labelEl.addEventListener('mousedown', handleDown)
     labelEl.addEventListener('touchstart', handleDown)
+    labelEl.addEventListener('keydown', (ev) => {
+      if (!keyHeld && ev.key === ' ') {
+        keyHeld = true
+        handleDown()
+      }
+    })
 
     labelEl.addEventListener('mouseup', handleUp)
     labelEl.addEventListener('touchend', handleUp)
+    labelEl.addEventListener('keyup', (ev) => {
+      if (ev.key === ' ') {
+        keyHeld = false
+        handleUp()
+      }
+    })
 
     labelEl.addEventListener('click', (ev: MouseEvent) => {
       ev.preventDefault()
