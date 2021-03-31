@@ -39,7 +39,7 @@ class Client {
 }
 
 export default class Comic {
-  consoleEnabled: boolean
+  impatient: boolean
   el: HTMLDivElement
   clickTimes: Array<number>
   playbackText: string
@@ -52,7 +52,6 @@ export default class Comic {
     this.sendTimeout = null
     this.client = new Client()
     this.clickTimes = []
-    this.consoleEnabled = false
   }
 
   start() {
@@ -124,9 +123,12 @@ export default class Comic {
     const morse = clickTimesToMorse(this.clickTimes).replace(/^ /, '') // Strip a preceding space
 
     clearTimeout(this.sendTimeout)
-    this.sendTimeout = window.setTimeout(() => {
-      this.send(morse)
-    }, SEND_DELAY)
+    this.sendTimeout = window.setTimeout(
+      () => {
+        this.send(morse)
+      },
+      this.impatient ? SEND_DELAY / 4 : SEND_DELAY,
+    )
   }
 
   async send(morse: string) {
@@ -151,6 +153,10 @@ export default class Comic {
   }
 
   playback(text: string) {
+    if (this.impatient) {
+      console.log(`Received: [${window.morse.encode(text)}] "${text}"`)
+    }
+
     const inputEl = this.el.querySelector('input')
     this.playbackText = text
     const morse = window.morse.encode(text)
@@ -175,7 +181,7 @@ export default class Comic {
       const [isOn, delay] = delays[idx]
       inputEl.checked = isOn
 
-      if (idx === delays.length - 1 && !hasPrinted) {
+      if (!this.impatient && idx === delays.length - 1 && !hasPrinted) {
         console.log(`Received: [${window.morse.encode(text)}] "${text}"`)
         hasPrinted = true
       }
