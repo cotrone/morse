@@ -9,6 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Morse.Live
   ( LiveMorseT
+  , UnkFreq
   , runLiveMorseT
   , liveReloader
   ) where
@@ -35,12 +36,13 @@ import           Data.Text (Text)
 import           Data.UUID
 import           Morse.API
 import           Morse.Types
+import Data.Ord
 
 type UnkFreq = (Set ByteString)
 
 -- | A  monad for live Morse usage.
 newtype LiveMorseT m a
-  = LiveMorseT { unLiveMorseT :: (ReaderT (TVar MorseTree, (TVar (PSQ.HashPSQ MorseQuery Int64 UnkFreq), MWC.Gen MWC.RealWorld)) m) a }
+  = LiveMorseT { unLiveMorseT :: (ReaderT (TVar MorseTree, (TVar (PSQ.HashPSQ MorseQuery (Down Int64) UnkFreq), MWC.Gen MWC.RealWorld)) m) a }
   deriving (Functor, Applicative, Monad, MonadIO)
 
 -- | Loads the content, and updats it periodicly
@@ -54,7 +56,7 @@ liveReloader u d dir = do
     delay (1::Double)
   pure mtTVar
 
-runLiveMorseT :: MonadIO m => TVar (PSQ.HashPSQ MorseQuery Int64 UnkFreq) -> TVar MorseTree -> LiveMorseT m a -> m a
+runLiveMorseT :: MonadIO m => TVar (PSQ.HashPSQ MorseQuery (Down Int64) UnkFreq) -> TVar MorseTree -> LiveMorseT m a -> m a
 runLiveMorseT unkTVar mt app = do
   g <- liftIO MWC.create
   (`runReaderT` (mt, (unkTVar, g))) . unLiveMorseT $ app
@@ -69,7 +71,7 @@ instance MonadIO m => Morse (LiveMorseT m) where
                                          ; Just (_, s) -> toPV s }) q
     where
       -- | The HLL's random size helps with this, but ...
-      keepSmall psq = if PSQ.size psq > 10000 then PSQ.deleteMin psq else psq
+      keepSmall = id -- FIXME this used to be if PSQ.size psq > 10000 then PSQ.deleteMin psq else psq
 
 {-
     let toPV hll = ((), (Just (copoint $ HLL.size hll, hll)))
