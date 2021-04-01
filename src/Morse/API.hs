@@ -5,6 +5,7 @@
 module Morse.API where
 
 import           Control.Applicative
+import qualified Control.Exception as E
 import           Control.Monad.Reader
 import           Data.Bytes.Serial (Serial)
 import qualified Data.ByteString as BS
@@ -86,8 +87,7 @@ splitDialogTrans (Transition TableState q rsp rs) = Right (insensitizeQuery (Not
 splitDialogTrans (Transition (SpecificState ss) q rsp rs) = Right (insensitizeQuery (Just ss, q), Set.singleton $ MorseResponder rsp rs)
 
 readMorseTable :: UUID -> Text -> FilePath -> IO MorseTree
-readMorseTable defState defResp fp = do
-  --putStrLn ("Loading "<>fp) 
+readMorseTable defState defResp fp = E.handle (\(e::E.SomeException) -> putStrLn ("Failed loading "<>fp) >> E.throw e) $ do
   csvData <- BL.readFile fp
   case CSV.decodeByName csvData of
     Left err -> fail err
@@ -108,7 +108,7 @@ readMorseTable defState defResp fp = do
           defResp
 
 readMorseResponses :: UUID -> Text -> FilePath -> IO MorseTree
-readMorseResponses defState defResp fp = do
+readMorseResponses defState defResp fp = E.handle (\(e::E.SomeException) -> putStrLn ("Failed loading "<>fp) >> E.throw e) $ do
   --putStrLn ("Loading "<>fp) 
   csvData <- BL.readFile fp
   case CSV.decodeByName csvData of
