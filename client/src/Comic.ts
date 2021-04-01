@@ -386,12 +386,8 @@ export default class Comic {
     this.hud.update('')
 
     const text = window.morse.decode(morse)
-    if (!text.length) {
-      return
-    }
 
     console.log(`Said: [${morse}] "${text}"`)
-
     this.handleCommand(text)
 
     const responseMorse = await this.client.say(morse)
