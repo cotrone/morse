@@ -20,19 +20,19 @@ function clickTimesToMorse(clickTimes: Array<number>) {
 }
 
 type ServerSayResponse = {
-  session: string
+  state: string
   say: string
 }
 
 class Client {
-  sessionId: string
+  stateId: string
 
   async say(text: string): Promise<string> {
     const resp = await fetch(
-      `${apiEndpoint}${this.sessionId ? this.sessionId + '/' : ''}${text}`,
+      `${apiEndpoint}${this.stateId ? this.stateId + '/' : ''}${text}`,
     )
     const data: ServerSayResponse = await resp.json()
-    this.sessionId = data.session
+    this.stateId = data.state
     return data.say
   }
 }
