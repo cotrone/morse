@@ -19,10 +19,10 @@ module Morse.Types
  ) where
 
 import           Control.Monad.Reader
-import           Control.Monad.State
 import           Control.Monad.Writer
 import           Control.Monad.RWS.Strict
 import qualified Data.Aeson as JS
+import           Data.Bytes.Serial (Serial)
 import           Data.CaseInsensitive  (CI)
 import qualified Data.Csv as CSV
 import           Data.Map.Strict (Map)
@@ -135,20 +135,24 @@ instance Semigroup MorseTree where
               (dl `Map.union` dr)
               def
 
-class (Monad m, MonadReader MorseTree m, MonadRandom m) => Morse m where
-  logNovel :: MorseQuery -> m ()
+class (Monad m, MonadRandom m) => Morse m where
+  -- | Log a query we don't know how to reply to, with a unique token related to the asker
+  --   for purpose of estimating asker frequency.
+  logNovel :: Serial a => a -> MorseQuery -> m ()
+  -- | Returns the current MorseTree
+  askMorseTree :: m MorseTree
 
 -- Mock monad for Morse behaviors
 newtype MockMorse a
   = MockMorse { runMockMorseT :: RWS MorseTree [MorseQuery] StdGen a }
   deriving (Functor, Applicative, Monad)
-  deriving (MonadReader MorseTree, MonadWriter [MorseQuery], MonadState StdGen)
 
 runMockMorse :: MorseTree -> StdGen -> MockMorse a -> (a, [MorseQuery])
 runMockMorse t g m = evalRWS (runMockMorseT m) t g 
 
 instance Morse MockMorse where
-  logNovel = tell . pure
+  logNovel _ = MockMorse . tell . pure
+  askMorseTree = MockMorse ask
 
 instance MonadRandom MockMorse where
     getRandomWord8  = MockMorse $ getRandomWord8

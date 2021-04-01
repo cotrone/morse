@@ -42,4 +42,4 @@ sayWithout = say Nothing
 
 say :: Morse m => Maybe UUID -> Text -> m MorseResponse
 say fromState phrase = do
-  lookupMorse (fromState, phrase)
+  lookupMorse ("Give me a user token here!"::Text) (fromState, phrase)

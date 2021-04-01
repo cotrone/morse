@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Main (main) where
 
 import           Data.Random.Source.StdGen
+import           Data.Text (Text)
 import           Data.UUID
 import           Morse.API
 import           Morse.Types
@@ -32,7 +34,7 @@ transitionTests :: TestTree
 transitionTests = testGroup "Transitions"
   [ testVectors
       "Known single transitions"
-      (\(r, q) er -> (runMockMorse golden (mkStdGen r) $ lookupMorse q) == er)
+      (\(r, q) er -> (runMockMorse golden (mkStdGen r) $ lookupMorse ("nonce"::Text) q) == er)
       [ ((1, (Nothing,   "Hello")),              (MorseResponse "Hello to you too!" defState, []))
       , ((1, (Nothing,   "What is your name?")), (MorseResponse "Morse" defState, []))
       , ((1, (Nothing,   "whatisyourname?")),    (MorseResponse "Morse" defState, []))

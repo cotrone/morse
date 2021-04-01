@@ -6,6 +6,7 @@ module Morse.API where
 
 import           Control.Applicative
 import           Control.Monad.Reader
+import           Data.Bytes.Serial (Serial)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import           Data.CaseInsensitive  (CI)
@@ -36,14 +37,14 @@ insensitize = CI.mk . T.replace " " ""
 insensitizeQuery :: MorseQuery -> MorseQueryCI
 insensitizeQuery = fmap insensitize
 
-lookupMorse :: Morse m => MorseQuery -> m MorseResponse
-lookupMorse q' = do
-    (mt@(MorseTree { _mtOpeners=opn, _mtTables=tbls, _mtConfused=cr, _mtStateDecode=sdc })) <- ask
+lookupMorse :: (Serial t, Morse m) => t -> MorseQuery -> m MorseResponse
+lookupMorse user q' = do
+    (mt@(MorseTree { _mtOpeners=opn, _mtTables=tbls, _mtConfused=cr, _mtStateDecode=sdc })) <- askMorseTree
     let q = insensitizeQuery q'
     pure . applyResponder mt q =<< randomSelection =<<
       (maybe
        -- If we failed, its novel so log it and give a confused response.
-       (logNovel q' >> pure cr)
+       (logNovel user q' >> pure cr)
        -- But first try to actually find it.
        pure $
          -- Try looking it up with its state.
