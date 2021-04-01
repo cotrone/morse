@@ -80,7 +80,7 @@ startSlackThread getMessage delaySeconds = do
           unless (successfulResponse response) $ do
             putStrLn $ "Unable to send a slack message message: " <> show (responseStatus response) 
             hFlush stdout
-          threadDelay $ (delaySeconds * (10 :: Int) ^ (6 :: Int))
+          threadDelay $ (delaySeconds * ((10 :: Int) ^ (6 :: Int)))
       pure ()
   where
     onException (Left ex) = putStrLn $ "Slack thread closed with an exception: "  <> show ex
