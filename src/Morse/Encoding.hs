@@ -81,4 +81,4 @@ encodeMorse :: Text -> Morse
 encodeMorse = T.intercalate " " . map (\c -> Map.findWithDefault "#" c toMorseMap) . T.unpack . T.toUpper
 
 decodeMorse :: Morse -> Text
-decodeMorse = T.pack . map (\t -> Map.findWithDefault '#' t fromMorseMap) . T.splitOn " "
+decodeMorse = T.pack . map (\t -> Map.findWithDefault '#' t fromMorseMap) . T.splitOn " " . T.replace "_" " "
