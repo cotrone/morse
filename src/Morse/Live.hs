@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -18,17 +19,28 @@ import           Control.Exception
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Control.Time
+import           Data.Bytes.Put
+import           Data.Bytes.Serial
+import           Data.ByteString
+--import           Data.Copointed
 import qualified Data.HashPSQ as PSQ
+--import           Data.HyperLogLog (HyperLogLog)
+--import qualified Data.HyperLogLog as HLL
+import           Data.Int
 import           Data.Random.Source
 import qualified Data.Random.Source.MWC as MWC
+import           Data.Set (Set)
+import qualified Data.Set as Set
 import           Data.Text (Text)
 import           Data.UUID
 import           Morse.API
 import           Morse.Types
 
+type UnkFreq = (Set ByteString)
+
 -- | A  monad for live Morse usage.
 newtype LiveMorseT m a
-  = LiveMorseT { unLiveMorseT :: (ReaderT (TVar MorseTree, (TVar (PSQ.HashPSQ MorseQuery Int ()), MWC.Gen MWC.RealWorld)) m) a }
+  = LiveMorseT { unLiveMorseT :: (ReaderT (TVar MorseTree, (TVar (PSQ.HashPSQ MorseQuery Int64 UnkFreq), MWC.Gen MWC.RealWorld)) m) a }
   deriving (Functor, Applicative, Monad, MonadIO)
 
 -- | Loads the content, and updats it periodicly
@@ -42,14 +54,25 @@ liveReloader u d dir = do
     delay (1::Double)
   pure mtTVar
 
-runLiveMorseT :: MonadIO m => TVar (PSQ.HashPSQ MorseQuery Int ()) -> TVar MorseTree -> LiveMorseT m a -> m a
+runLiveMorseT :: MonadIO m => TVar (PSQ.HashPSQ MorseQuery Int64 UnkFreq) -> TVar MorseTree -> LiveMorseT m a -> m a
 runLiveMorseT unkTVar mt app = do
   g <- liftIO MWC.create
   (`runReaderT` (mt, (unkTVar, g))) . unLiveMorseT $ app
 
 instance MonadIO m => Morse (LiveMorseT m) where
-  logNovel _ _ = pure ()
   askMorseTree = LiveMorseT ask >>= liftIO . readTVarIO . fst
+  logNovel tkn q = LiveMorseT $ do
+    p <- ask
+    let toPV hll' = let hll = Set.insert (runPutS $ serialize tkn) hll' in ((), (Just (fromIntegral $ Set.size hll, hll)))
+    liftIO . atomically $ modifyTVar (fst $ snd p) $
+      snd . PSQ.alter (\case { Nothing     -> toPV mempty
+                             ; Just (_, s) -> toPV s }) q
+{-
+    let toPV hll = ((), (Just (copoint $ HLL.size hll, hll)))
+    liftIO . atomically $ modifyTVar (fst $ snd p) $
+      snd . PSQ.alter (\case { Nothing     -> toPV $ HLL.insert tkn mempty
+                             ; Just (_, p) -> toPV $ HLL.insert tkn p }) q
+-}
 
 askGen :: Monad m => LiveMorseT m (MWC.Gen MWC.RealWorld)
 askGen = snd . snd <$> LiveMorseT ask
