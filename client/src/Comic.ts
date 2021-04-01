@@ -103,7 +103,7 @@ class Speaker {
   }
 
   update() {
-    this.el.innerText = this.isEnabled ? '🔊' : '🔈'
+    this.el.innerText = this.isEnabled ? '🔊' : '🔇'
     this.el.title = this.isEnabled ? 'Mute sound' : 'Enable sound'
   }
 
