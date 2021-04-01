@@ -4,5 +4,5 @@ module.exports = {
   url: '/2445',
   width: 740,
   height: 448,
-  apiEndpoint: '/2445/morse/.../',
+  apiEndpoint: '/2445/morse',
 }

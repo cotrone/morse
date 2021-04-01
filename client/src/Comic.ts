@@ -103,7 +103,7 @@ class Speaker {
   }
 
   update() {
-    this.el.innerText = this.isEnabled ? '🔊' : '🔈'
+    this.el.innerText = this.isEnabled ? '🔊' : '🔇'
     this.el.title = this.isEnabled ? 'Mute sound' : 'Enable sound'
   }
 
@@ -283,6 +283,7 @@ export default class Comic {
   hud: MorseHUD
   speaker: Speaker
   isHUDShown: boolean
+  hasInteracted: boolean
   clickTimes: Array<number>
   updateTimeout: number
   playTimeout: number
@@ -297,6 +298,7 @@ export default class Comic {
     this.hud = new MorseHUD(el)
     this.speaker = new Speaker(this.el)
     this.isHUDShown = false
+    this.hasInteracted = false
     this.sendTimeout = null
     this.updateTimeout = null
     this.client = new Client()
@@ -333,6 +335,7 @@ export default class Comic {
 
       setOn(true)
 
+      this.hasInteracted = true
       this.showHUD()
       this.updateHUD()
     }
@@ -380,7 +383,7 @@ export default class Comic {
     this.printIntro()
 
     setTimeout(() => {
-      if (!this.lastOn) {
+      if (!this.hasInteracted) {
         this.playback(window.morse.encode('CQ'))
       }
     }, IDLE_DELAY)
@@ -448,6 +451,8 @@ export default class Comic {
   }
 
   async send(morse: string) {
+    this.hasInteracted = true
+
     const newClickTimes: Array<number> = []
     this.clickTimes = newClickTimes
     this.hud.update('')
