@@ -52,6 +52,14 @@ function buildComic(env, argv) {
         }),
       }),
     ].filter((x) => x),
+    devServer: {
+      proxy: {
+        '/2445/morse': {
+          target: 'https://morse.xkcd.com:8000/',
+          changeOrigin: true,
+        },
+      },
+    },
   }
 }
 
