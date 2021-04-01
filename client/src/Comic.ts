@@ -435,7 +435,7 @@ export default class Comic {
       () => {
         this.send(morse)
       },
-      this.impatient ? SEND_DELAY / 4 : SEND_DELAY,
+      this.impatient ? DOT_LENGTH * 7 : SEND_DELAY,
     )
   }
 
