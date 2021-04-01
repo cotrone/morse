@@ -8,6 +8,7 @@ export class BeepComicGlobal {
     comicEl.setAttribute(
       'style',
       `
+        position: relative;
         display: flex;
         width: ${comicData.width}px;
         height: ${comicData.height}px;
