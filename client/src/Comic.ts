@@ -420,6 +420,12 @@ export default class Comic {
       const [isOn, delay] = delays[idx]
       inputEl.checked = isOn
 
+      if (isOn) {
+        this.speaker.on()
+      } else {
+        this.speaker.off()
+      }
+
       if (!this.impatient && idx === delays.length - 1 && !hasPrinted) {
         console.log(`Received: [${window.morse.encode(text)}] "${text}"`)
         hasPrinted = true
