@@ -80,7 +80,7 @@ toMorseMap :: Map Char Morse
 toMorseMap = Map.insert ' ' "/" $ Map.fromList morseCode
 
 fromMorseMap :: Map Morse Text
-fromMorseMap = Map.union specialCodes $ Map.insert "/" " " $ Map.fromList (fmap (fmap T.singleton . swap) morseCode)
+fromMorseMap = Map.union specialCodes $ Map.insert "" "" $ Map.insert "/" " " $ Map.fromList (fmap (fmap T.singleton . swap) morseCode)
 
 encodeMorse :: Text -> Morse
 encodeMorse = T.intercalate " " . map (\c -> Map.findWithDefault "#" c toMorseMap) . T.unpack . T.toUpper
