@@ -19,7 +19,7 @@ import qualified Network.Wai as WAI
 
 main :: IO ()
 main = do
-  mt <- liveReloader (read "eccfd622-9197-11eb-8001-8c16454fb02a") "Wut mate?" "content"
+  mt <- liveReloader (read "eccfd622-9197-11eb-8001-8c16454fb02a") "Wut mate?" "content" (const $ pure ())
   unk <- newTVarIO PSQ.empty
   startSlackThread (getNextSlackMessage 50 mt unk) (5 * 60)
   Warp.runEnv 8080 $ waiMorse (runLiveMorseT unk mt) requestToken

@@ -16,7 +16,7 @@ module Morse.Live
 
 import           Control.Concurrent
 import           Control.Concurrent.STM
-import           Control.Exception
+import qualified Control.Exception as E
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Control.Time
@@ -46,11 +46,11 @@ newtype LiveMorseT m a
   deriving (Functor, Applicative, Monad, MonadIO)
 
 -- | Loads the content, and updats it periodicly
-liveReloader :: UUID -> Text -> FilePath -> IO (TVar MorseTree)
-liveReloader u d dir = do
+liveReloader :: UUID -> Text -> FilePath -> (E.SomeException -> IO ()) -> IO (TVar MorseTree)
+liveReloader u d dir handler = E.handle (\(e::E.SomeException) -> handler e >> E.throw e) $ do
   initMT <- load u d dir
   mtTVar <- newTVarIO initMT
-  void . forkIO . forever . handle (\(e::SomeException) -> do { print e; delay (10::Double); } ) $ do
+  void . forkIO . forever . E.handle (\(e::E.SomeException) -> do { print e; handler e; delay (10::Double); } ) $ do
     newMT <- load u d dir
     atomically $ writeTVar mtTVar newMT
     delay (1::Double)
