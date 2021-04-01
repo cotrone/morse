@@ -1,8 +1,8 @@
 module.exports = {
   name: 'Beep',
   alt: 'Check it out!',
-  url: '/tbd',
+  url: '/2445',
   width: 740,
   height: 480,
-  apiEndpoint: 'https://morse.xkcd.com:8000/.../',
+  apiEndpoint: '/2445/morse/.../',
 }

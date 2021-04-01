@@ -1,9 +1,9 @@
 import { apiEndpoint } from '../comic'
 
 const PLAYBACK_DELAY = 250
-const SEND_DELAY = 4000
+const SEND_DELAY = 3000
 const DOT_LENGTH = 150
-const HUD_DELAY = 5000
+const HUD_DELAY = 3000
 
 function clickTimesToMorse(clickTimes: Array<number>) {
   return clickTimes
@@ -43,12 +43,73 @@ class Client {
   }
 }
 
+class Speaker {
+  TARGET_GAIN = 0.2
+
+  isEnabled: boolean
+  ctx: AudioContext
+  gainNode: GainNode
+
+  constructor() {
+    this.isEnabled = false
+    this.ctx = null
+    this.gainNode = null
+  }
+
+  enable() {
+    this.isEnabled = true
+  }
+
+  disable() {
+    this.isEnabled = false
+    this.off()
+  }
+
+  on() {
+    if (!this.isEnabled) {
+      return
+    }
+
+    if (!this.ctx) {
+      this.ctx = new AudioContext()
+
+      const oscNode = this.ctx.createOscillator()
+      this.gainNode = this.ctx.createGain()
+
+      oscNode.type = 'sine'
+      oscNode.frequency.value = 440
+      oscNode.connect(this.gainNode)
+
+      this.gainNode.gain.value = 0
+      this.gainNode.connect(this.ctx.destination)
+
+      oscNode.start()
+    }
+
+    this.gainNode.gain.cancelAndHoldAtTime(this.ctx.currentTime)
+    this.gainNode.gain.linearRampToValueAtTime(
+      this.TARGET_GAIN,
+      this.ctx.currentTime + 0.01,
+    )
+  }
+
+  off() {
+    if (!this.ctx) {
+      return
+    }
+    this.gainNode.gain.linearRampToValueAtTime(
+      0,
+      this.ctx.currentTime + DOT_LENGTH / 1000 / 2,
+    )
+  }
+}
+
 class MorseHUD {
   HUD_LENGTH = 6
   HUD_CHAR_WIDTH = 50
   HUD_CHAR_SIZE = 7
-  HUD_ANIM_DURATION = 200
-  HUD_FAST_ANIM_DURATION = 75
+  HUD_ANIM_DURATION = DOT_LENGTH
+  HUD_FAST_ANIM_DURATION = DOT_LENGTH / 2
 
   parentEl: HTMLDivElement
   el: HTMLDivElement
@@ -69,7 +130,7 @@ class MorseHUD {
         left: 50%;
         opacity: 0;
         transform: translateX(-50%);
-        transition: all 5s ease-in;
+        transition: all 5s linear;
         pointer-events: none;
       `,
     )
@@ -95,6 +156,7 @@ class MorseHUD {
       this.elStack = []
       for (const el of oldStack) {
         el.style.opacity = '0'
+        el.style.transitionDuration = `${this.HUD_ANIM_DURATION * 2}ms`
       }
       setTimeout(() => {
         for (const el of oldStack) {
@@ -104,7 +166,8 @@ class MorseHUD {
       return
     }
 
-    if (morse.length > lastMorse.length) {
+    const newCount = morse.length - lastMorse.length
+    for (let i = 0; i < newCount; i++) {
       const newBoxEl = document.createElement('div')
       newBoxEl.setAttribute(
         'style',
@@ -116,7 +179,7 @@ class MorseHUD {
           justify-content: center;
           width: ${this.HUD_CHAR_WIDTH}px;
           opacity: 0;
-          transition: all ${this.HUD_ANIM_DURATION}ms ease-in-out;
+          transition: all ${this.HUD_ANIM_DURATION}ms ease-out;
           transform: translateY(7px);
         `,
       )
@@ -131,7 +194,7 @@ class MorseHUD {
       )
       newBoxEl.appendChild(newCharEl)
       this.el.appendChild(newBoxEl)
-      this.el.offsetTop
+      this.el.offsetTop // Force layout to set transition start values
       this.elStack.unshift(newBoxEl)
     }
 
@@ -141,9 +204,11 @@ class MorseHUD {
       if (char === '.') {
         charEl.style.width = `${this.HUD_CHAR_SIZE}px`
         charEl.style.borderRadius = `${this.HUD_CHAR_SIZE}px`
+        charEl.style.opacity = '1'
       } else if (char === '-') {
         charEl.style.width = `${Math.floor(3.5 * this.HUD_CHAR_SIZE)}px`
         charEl.style.borderRadius = '2px'
+        charEl.style.opacity = '1'
       } else {
         charEl.style.opacity = '0'
       }
@@ -152,7 +217,7 @@ class MorseHUD {
       boxEl.style.transform = `translateX(${Math.floor(x)}px)`
     }
 
-    if (this.elStack.length > this.HUD_LENGTH) {
+    while (this.elStack.length > this.HUD_LENGTH) {
       const oldBoxEl = this.elStack.pop()
       oldBoxEl.style.opacity = '0'
       setTimeout(() => {
@@ -166,8 +231,9 @@ export default class Comic {
   impatient: boolean
   el: HTMLDivElement
   hud: MorseHUD
+  speaker: Speaker
   clickTimes: Array<number>
-  updateInterval: number
+  updateTimeout: number
   playTimeout: number
   sendTimeout: number
   lastOff: number
@@ -178,9 +244,10 @@ export default class Comic {
     this.el = el
     this.hud = new MorseHUD(el)
     this.sendTimeout = null
-    this.updateInterval = null
+    this.updateTimeout = null
     this.client = new Client()
     this.clickTimes = []
+    this.speaker = new Speaker()
   }
 
   start() {
@@ -197,42 +264,46 @@ export default class Comic {
       inputEl.checked = isOn
       if (isOn) {
         this.lastOn = Date.now()
+        this.speaker.on()
       } else {
         this.lastOff = Date.now()
+        this.speaker.off()
       }
       this.clickTimes.push(this.lastOff - this.lastOn)
-      this.interpretClicks()
     }
 
     const handleDown = () => {
       clearTimeout(this.playTimeout)
-      clearInterval(this.updateInterval)
+      clearTimeout(this.sendTimeout)
 
       setOn(true)
 
       this.updateHUD()
-      this.updateInterval = window.setInterval(() => {
-        this.updateHUD()
-      }, DOT_LENGTH)
     }
 
     const handleUp = () => {
       setOn(false)
+      this.updateHUD()
+      this.interpretClicks()
       inputEl.focus()
     }
 
     labelEl.addEventListener('mousedown', handleDown)
     labelEl.addEventListener('touchstart', handleDown)
     labelEl.addEventListener('keydown', (ev) => {
+      if (!this.el.contains(ev.target as HTMLElement)) {
+        return
+      }
+
       if (!keyHeld && ev.key === ' ') {
         keyHeld = true
         handleDown()
       }
     })
 
-    labelEl.addEventListener('mouseup', handleUp)
-    labelEl.addEventListener('touchend', handleUp)
-    labelEl.addEventListener('keyup', (ev) => {
+    window.addEventListener('mouseup', handleUp)
+    window.addEventListener('touchend', handleUp)
+    window.addEventListener('keyup', (ev) => {
       if (ev.key === ' ') {
         keyHeld = false
         handleUp()
@@ -259,13 +330,26 @@ export default class Comic {
   updateHUD() {
     // Display as if the user took a final action now.
     let clickTimes
+    const now = Date.now()
+
     if (this.lastOn > this.lastOff) {
-      clickTimes = [...this.clickTimes, Date.now() - this.lastOn + 1]
+      clickTimes = [...this.clickTimes, now - this.lastOn + 1]
     } else {
-      clickTimes = [...this.clickTimes, this.lastOff - Date.now()]
+      clickTimes = [...this.clickTimes, this.lastOff - now - 1]
     }
-    const morse = clickTimesToMorse(clickTimes)
+
+    let morse = clickTimesToMorse(clickTimes)
+    if (this.lastOff > this.lastOn) {
+      // Add a blank space for the next character if not holding down.
+      morse += ' '
+    }
+
     this.hud.update(morse)
+
+    clearTimeout(this.updateTimeout)
+    this.updateTimeout = window.setTimeout(() => {
+      this.updateHUD()
+    }, DOT_LENGTH)
   }
 
   interpretClicks() {
@@ -291,6 +375,12 @@ export default class Comic {
     }
 
     console.log(`Said: [${morse}] "${text}"`)
+
+    if (text === 'BEEP') {
+      this.speaker.enable()
+    } else if (text === 'MUTE' || text === 'QUIET') {
+      this.speaker.disable()
+    }
 
     const responseMorse = await this.client.say(morse)
 
