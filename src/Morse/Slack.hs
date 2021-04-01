@@ -63,25 +63,27 @@ data SlackConnection = SlackConnection {
 , connectionCallbackUrl :: SlackCallbackUrl -- ^ The full url for the callback
 }
 
-startSlackThread :: IO Text -> Int -> IO ()
-startSlackThread getMessage delaySeconds = do
-  urlResult <- readSlackCallbackUrl
-  case urlResult of
-    Left err -> do
-      putStrLn $ "Slack posting not running: " <> err
+startSlackThread :: SlackConnection -> IO Text -> Int -> IO ()
+startSlackThread slackConn getMessage delaySeconds = do
+  putStrLn $ "Starting slack posting thread"
+  hFlush stdout
+  _threadId <- flip forkFinally (\ex -> onException ex >> hFlush stdout) $ do
+    initResp <- sendSlackMessage slackConn "Morse moderation bot started"
+    unless (successfulResponse initResp) $ do
+      putStrLn $ "Unable to send a slack message message: " <> show (responseStatus initResp) 
       hFlush stdout
-    Right url -> do
-      putStrLn $ "Starting slack posting thread"
+    forever $ do
+      putStrLn "Getting next slack message" 
       hFlush stdout
-      _threadId <- flip forkFinally (\ex -> onException ex >> hFlush stdout) $ do
-        slackConn <- initSlack url
-        forever $ do
-          response <- sendSlackMessage slackConn =<< getMessage
-          unless (successfulResponse response) $ do
-            putStrLn $ "Unable to send a slack message message: " <> show (responseStatus response) 
-            hFlush stdout
-          threadDelay $ (delaySeconds * ((10 :: Int) ^ (6 :: Int)))
-      pure ()
+      msg <- getMessage
+      response <- sendSlackMessage slackConn msg
+      unless (successfulResponse response) $ do
+        putStrLn $ "Unable to send a slack message message: " <> show (responseStatus response) 
+        hFlush stdout
+      putStrLn "Slack message sent, waiting"
+      hFlush stdout
+      threadDelay $ (delaySeconds * ((10 :: Int) ^ (6 :: Int)))
+  pure ()
   where
     onException (Left ex) = putStrLn $ "Slack thread closed with an exception: "  <> show ex
     onException (Right _) = putStrLn "Slack thread closed gracefully somehow"
@@ -95,6 +97,8 @@ readSlackCallbackUrl =
 initSlack :: SlackCallbackUrl -> IO SlackConnection
 initSlack cbUrl = do
   httpManager <- TLS.newTlsManager
+  putStrLn $ "Slack connection created with url: " <> unSlackCabllbackUrl cbUrl
+  hFlush stdout
   pure $ SlackConnection httpManager cbUrl
 
 successfulResponse :: Response a -> Bool
@@ -102,6 +106,8 @@ successfulResponse = (== status200) . responseStatus
 
 sendSlackMessage :: SlackConnection -> Text -> IO (Response Lazy.ByteString)
 sendSlackMessage slackConn msg = do
+  putStrLn "Attempting to send a slack message"
+  hFlush stdout
   let requestUrl = unSlackCabllbackUrl $ connectionCallbackUrl slackConn
   initialRequest <- parseRequest requestUrl
   let reqBody = object ["text" .= msg]

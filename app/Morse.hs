@@ -16,12 +16,19 @@ import           Morse.Types
 import           Network.Socket
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai as WAI
+-- import Control.Concurrent (forkIO, threadDelay)
+import System.IO (stdout, hFlush)
 
 main :: IO ()
 main = do
   mt <- liveReloader (read "eccfd622-9197-11eb-8001-8c16454fb02a") "Wut mate?" "content" (const $ pure ())
   unk <- newTVarIO PSQ.empty
-  startSlackThread (getNextSlackMessage 50 mt unk) (5 * 60)
+  eCbURL <- readSlackCallbackUrl
+  case eCbURL of
+    Left err -> putStrLn ("Unable to read callback url: " <> show err) >> hFlush stdout
+    Right cbUrl -> do
+      slackConn <- initSlack cbUrl
+      startSlackThread  slackConn (getNextSlackMessage 50 mt unk) (5 * 60)
   Warp.runEnv 8080 $ waiMorse (runLiveMorseT unk mt) requestToken
 
 getNextSlackMessage :: Int -> TVar MorseTree -> TVar (PSQ.HashPSQ MorseQuery (Down Int64) UnkFreq) -> IO Text
