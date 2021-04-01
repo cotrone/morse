@@ -65,8 +65,12 @@ instance MonadIO m => Morse (LiveMorseT m) where
     p <- ask
     let toPV hll' = let hll = Set.insert (runPutS $ serialize tkn) hll' in ((), (Just (fromIntegral $ Set.size hll, hll)))
     liftIO . atomically $ modifyTVar (fst $ snd p) $
-      snd . PSQ.alter (\case { Nothing     -> toPV mempty
-                             ; Just (_, s) -> toPV s }) q
+      keepSmall . snd . PSQ.alter (\case { Nothing     -> toPV mempty
+                                         ; Just (_, s) -> toPV s }) q
+    where
+      -- | The HLL's random size helps with this, but ...
+      keepSmall psq = if PSQ.size psq > 10000 then PSQ.deleteMin psq else psq
+
 {-
     let toPV hll = ((), (Just (copoint $ HLL.size hll, hll)))
     liftIO . atomically $ modifyTVar (fst $ snd p) $
