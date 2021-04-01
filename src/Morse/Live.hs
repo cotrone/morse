@@ -71,7 +71,7 @@ instance MonadIO m => Morse (LiveMorseT m) where
                                          ; Just (_, s) -> toPV s }) q
     where
       -- | The HLL's random size helps with this, but ...
-      keepSmall psq = if PSQ.size psq > 10000 then PSQ.deleteMin psq else psq
+      keepSmall = id -- FIXME this used to be if PSQ.size psq > 10000 then PSQ.deleteMin psq else psq
 
 {-
     let toPV hll = ((), (Just (copoint $ HLL.size hll, hll)))
