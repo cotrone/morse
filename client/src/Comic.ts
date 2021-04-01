@@ -116,7 +116,7 @@ class MorseHUD {
           justify-content: center;
           width: ${this.HUD_CHAR_WIDTH}px;
           opacity: 0;
-          transition: all ${this.HUD_ANIM_DURATION}ms ease-in-out;
+          transition: all ${this.HUD_ANIM_DURATION}ms ease-out;
           transform: translateY(7px);
         `,
       )
