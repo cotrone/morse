@@ -3,19 +3,19 @@
 module Main where
 
 import           Control.Concurrent.STM
+import           Control.Monad
 import qualified Data.HashPSQ as PSQ
+import           Data.Ord
+import           Data.Text (Text)
 import qualified Data.Text as Text
+import           Data.Int
 import           Morse.Live
 import           Morse.Web
 import           Morse.Slack
+import           Morse.Types
 import           Network.Socket
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai as WAI
-import Morse.Types
-import Data.Text (Text)
-import Control.Monad
-import Data.Ord
-import Data.Int
 
 main :: IO ()
 main = do
