@@ -28,8 +28,8 @@ type MorseAPI
  = MorseSay
 
 type MorseSay
-  =    "..." :> Capture "uuid" MorseUUID :> Capture "phrase" Text :> Get '[MorseText] MorseResponse
-  :<|> "..." :>                             Capture "phrase" Text :> Get '[MorseText] MorseResponse
+  =    "..." :> Capture "uuid" MorseUUID :> CaptureAll "phrase" Text :> Get '[MorseText] MorseResponse
+  :<|> "..." :>                             CaptureAll "phrase" Text :> Get '[MorseText] MorseResponse
 
 morseAPI :: Proxy MorseAPI
 morseAPI = Proxy
@@ -42,15 +42,15 @@ waiMorse runMorse = serve morseAPI (hoistServer morseAPI runMorse morseServer)
 morseServer :: Morse m => ServerT MorseAPI m
 morseServer = sayWith :<|> sayWithout
 
-sayWith :: Morse m => MorseUUID -> Text -> m MorseResponse
+sayWith :: Morse m => MorseUUID -> [Text] -> m MorseResponse
 sayWith u = say (Just u)
 
-sayWithout :: Morse m => Text -> m MorseResponse
+sayWithout :: Morse m => [Text] -> m MorseResponse
 sayWithout = say Nothing
 
-say :: Morse m => Maybe MorseUUID -> Text -> m MorseResponse
+say :: Morse m => Maybe MorseUUID -> [Text] -> m MorseResponse
 say fromState phraseMorse = do
-  let phrase = decodeMorse phraseMorse
+  let phrase = decodeMorse $ T.intercalate "/" phraseMorse
   lookupMorse ("Give me a user token here!"::Text) (unMorseUUID <$> fromState, phrase)
 
 data MorseText
