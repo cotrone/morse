@@ -26,6 +26,16 @@ class Client {
   }
 
   async say(morse: string): Promise<string> {
+    if (morse === '.' || morse === '..') {
+      // OK, so this is funny: after taking great pains to make our API entirely
+      // use morse code paths, we discovered that the paths '.' and '..' would
+      // not be sent by the browser. As it turns out, these paths have special
+      // meaning: they refer to the current and parent directory, respectively,
+      // and the browser actually changes the URL before sending it down the
+      // wire!
+      morse = '_' + morse
+    }
+
     const url = [
       apiEndpoint,
       '/.../',
