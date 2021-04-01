@@ -32,8 +32,8 @@ type MorseAPI
 
 type MorseSay
   = AuthProtect Token :> 
-      ( "..." :> Capture "uuid" MorseUUID :> Capture "phrase" Text :> Get '[MorseText] MorseResponse
-       :<|> "..." :>                             Capture "phrase" Text :> Get '[MorseText] MorseResponse )
+      ( "..." :> Capture "uuid" MorseUUID :> CaptureAll "phrase" Text :> Get '[MorseText] MorseResponse
+         :<|> "..." :>                       CaptureAll "phrase" Text :> Get '[MorseText] MorseResponse )
 
 morseAPI :: Proxy MorseAPI
 morseAPI = Proxy
@@ -60,15 +60,15 @@ waiMorse runMorse requestToken =
 morseServer :: Morse m => ServerT MorseAPI m
 morseServer token = sayWith token :<|> sayWithout token
 
-sayWith :: Morse m => Token -> MorseUUID -> Text -> m MorseResponse
+sayWith :: Morse m => Token -> MorseUUID -> [Text] -> m MorseResponse
 sayWith token u = say token (Just u)
 
-sayWithout :: Morse m => Token -> Text -> m MorseResponse
+sayWithout :: Morse m => Token -> [Text] -> m MorseResponse
 sayWithout token = say token Nothing
 
-say :: Morse m => Token -> Maybe MorseUUID ->  Text -> m MorseResponse
+say :: Morse m => Token -> Maybe MorseUUID -> [Text] -> m MorseResponse
 say (Token t) fromState phraseMorse = do
-  let phrase = decodeMorse phraseMorse
+  let phrase = decodeMorse $ T.intercalate "/" phraseMorse
   lookupMorse t (unMorseUUID <$> fromState, phrase)
 
 data MorseText
