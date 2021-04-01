@@ -28,8 +28,9 @@ morseAPI = Proxy
 
 waiMorse :: (Morse m)
          => (forall a . m a -> Handler a)
+         -> (Request -> Text) -- ^ Get a token out of a request
          -> WAI.Application
-waiMorse runMorse = serve morseAPI (hoistServer morseAPI runMorse morseServer)
+waiMorse runMorse requestToken = serve morseAPI (hoistServer morseAPI runMorse morseServer)
 
 morseServer :: Morse m => ServerT MorseAPI m
 morseServer = sayWith :<|> sayWithout
