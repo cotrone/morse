@@ -390,24 +390,14 @@ export default class Comic {
     this.playback(responseMorse)
   }
 
-  handleCommand(text: string) {
-    if (text === 'BEEP') {
-      this.speaker.enable()
-    } else if (text === 'MUTE' || text === 'QUIET') {
-      this.speaker.disable()
-    } else if (text === 'QRS') {
-      this.playbackDelay = Math.min(500, this.playbackDelay * 1.2)
-    } else if (text === 'QRQ') {
-      this.playbackDelay = Math.max(50, this.playbackDelay * (1 / 1.2))
-    }
-  }
-
   playback(morse: string) {
     const text = window.morse.decode(morse)
 
     if (this.impatient) {
       console.log(`Received: [${window.morse.encode(text)}] "${text}"`)
     }
+
+    this.handleAction(text)
 
     const inputEl = this.el.querySelector('input')
 
@@ -448,5 +438,23 @@ export default class Comic {
     }
 
     tick()
+  }
+
+  handleCommand(text: string) {
+    if (text === 'BEEP') {
+      this.speaker.enable()
+    } else if (text === 'MUTE' || text === 'QUIET') {
+      this.speaker.disable()
+    } else if (text === 'QRS') {
+      this.playbackDelay = Math.min(500, this.playbackDelay * 1.2)
+    } else if (text === 'QRQ') {
+      this.playbackDelay = Math.max(50, this.playbackDelay * (1 / 1.2))
+    }
+  }
+
+  handleAction(text: string) {
+    if (text.startsWith('//')) {
+      window.open('https:' + text)
+    }
   }
 }
