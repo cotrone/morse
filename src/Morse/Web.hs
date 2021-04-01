@@ -9,7 +9,7 @@ module Morse.Web
  ( waiMorse
  , MorseAPI, morseAPI
  , morseServer
- , Token (..)
+ , Token(..)
  , TokenAuthHandler
  ) where
 
