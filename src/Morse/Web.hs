@@ -61,13 +61,13 @@ morseServer :: Morse m => ServerT MorseAPI m
 morseServer token = sayWith token :<|> sayWithout token
 
 sayWith :: Morse m => Token -> MorseUUID -> Text -> m MorseResponse
-sayWith token u = say (Just u) token
+sayWith token u = say token (Just u)
 
 sayWithout :: Morse m => Token -> Text -> m MorseResponse
-sayWithout token = say Nothing token
+sayWithout token = say token Nothing
 
-say :: Morse m => Maybe MorseUUID -> Token ->  Text -> m MorseResponse
-say fromState (Token t) phraseMorse = do
+say :: Morse m => Token -> Maybe MorseUUID ->  Text -> m MorseResponse
+say (Token t) fromState phraseMorse = do
   let phrase = decodeMorse phraseMorse
   lookupMorse t (unMorseUUID <$> fromState, phrase)
 
