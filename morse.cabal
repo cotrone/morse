@@ -32,7 +32,11 @@ common deps
    , delay ^>= 0
    , directory ^>= 1.3
    , filepath ^>= 1.4
+   , http-media ^>= 0.8
    , hyperloglog ^>= 0.4
+   , http-client ^>= 0.7
+   , http-client-tls ^>= 0.3.5.3
+   , http-types ^>= 0.12
    , mtl ^>= 2.2
    , network ^>= 3.1
    , random-fu ^>= 0.2
@@ -49,9 +53,11 @@ library
     hs-source-dirs:   src
     exposed-modules:
       Morse.API
+      Morse.Encoding
       Morse.Live
       Morse.Types
       Morse.Web
+      Morse.Slack
 
 executable morse
     import: deps
