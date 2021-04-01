@@ -11,6 +11,7 @@ module Morse.Web
  , morseServer
  , Token(..)
  , TokenAuthHandler
+ , MorseText
  ) where
 
 import           Data.Text (Text)
@@ -69,7 +70,7 @@ sayWithout token = say token Nothing
 
 say :: Morse m => Token -> Maybe MorseUUID -> [Text] -> m MorseResponse
 say (Token t) fromState phraseMorse = do
-  let phrase = decodeMorse $ T.replace "_" " " $ T.intercalate "/" phraseMorse
+  let phrase = decodeMorse $ T.intercalate "/" phraseMorse
   lookupMorse t (unMorseUUID <$> fromState, phrase)
 
 data MorseText
