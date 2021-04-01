@@ -49,7 +49,8 @@ toSlackMessage tree res = TL.toStrict . toLazyText . mconcat $ (\r -> displayRes
         displayState  = 
           case mUUID of
             Nothing -> mempty
-            Just uuid -> " - " <> (maybe "* NO STATE FOUND *" fromText $ fmap snd $ Map.lookup uuid (_mtStateDecode tree))
+            Just uuid -> " - " <> (maybe "* NO STATE FOUND *" (fromText . displayTuple) $ Map.lookup uuid (_mtStateDecode tree))
+    displayTuple (l, r) = l <> " - " <> r
 
 -- Slack API
 
