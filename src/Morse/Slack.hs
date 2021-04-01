@@ -32,7 +32,7 @@ startSlackThread getMessage delaySeconds = do
         forever $ do
           response <- sendSlackMessage slackConn =<< getMessage
           unless (successfulResponse response) $ putStrLn $ "Unable to send a slack message message: " <> show (responseStatus response) 
-          threadDelay $ (delaySeconds * 10 ^ 6)
+          threadDelay $ (delaySeconds * (10 :: Int) ^ (6 :: Int))
       pure ()
   where
     onException (Left ex) = putStrLn $ "Slack thread closed with an exception: "  <> show ex
