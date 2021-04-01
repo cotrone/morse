@@ -9,7 +9,7 @@ export class BeepComicGlobal {
       'style',
       `
         position: relative;
-        display: flex;
+        display: inline-flex;
         width: ${comicData.width}px;
         height: ${comicData.height}px;
         box-sizing: border-box;
