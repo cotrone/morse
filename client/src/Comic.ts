@@ -284,8 +284,14 @@ export default class Comic {
     }
 
     const handleUp = (ev: Event) => {
+      // Since this is hooked up to global event handlers, we must ensure the checkbox is actually being held.
+      if (this.lastOn < this.lastOff) {
+        return
+      }
+
       ev.preventDefault()
       setOn(false)
+
       this.updateHUD()
       this.interpretClicks()
       inputEl.focus()
