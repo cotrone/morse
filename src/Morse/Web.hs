@@ -10,6 +10,7 @@ module Morse.Web
  , MorseAPI, morseAPI
  , morseServer
  , Token (..)
+ , TokenAuthHandler
  ) where
 
 import           Data.Text (Text)
