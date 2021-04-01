@@ -168,7 +168,7 @@ export default class Comic {
   el: HTMLDivElement
   hud: MorseHUD
   clickTimes: Array<number>
-  updateInterval: number
+  updateTimeout: number
   playTimeout: number
   sendTimeout: number
   lastOff: number
@@ -179,7 +179,7 @@ export default class Comic {
     this.el = el
     this.hud = new MorseHUD(el)
     this.sendTimeout = null
-    this.updateInterval = null
+    this.updateTimeout = null
     this.client = new Client()
     this.clickTimes = []
   }
@@ -207,18 +207,15 @@ export default class Comic {
     const handleDown = () => {
       clearTimeout(this.playTimeout)
       clearTimeout(this.sendTimeout)
-      clearInterval(this.updateInterval)
 
       setOn(true)
 
       this.updateHUD()
-      this.updateInterval = window.setInterval(() => {
-        this.updateHUD()
-      }, DOT_LENGTH)
     }
 
     const handleUp = () => {
       setOn(false)
+      this.updateHUD()
       this.interpretClicks()
       inputEl.focus()
     }
@@ -269,6 +266,11 @@ export default class Comic {
     }
     const morse = clickTimesToMorse(clickTimes)
     this.hud.update(morse)
+
+    clearTimeout(this.updateTimeout)
+    this.updateTimeout = window.setTimeout(() => {
+      this.updateHUD()
+    }, DOT_LENGTH)
   }
 
   interpretClicks() {
