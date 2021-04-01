@@ -18,6 +18,7 @@ import           Control.Exception
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Control.Time
+import qualified Data.HashPSQ as PSQ
 import           Data.Random.Source
 import qualified Data.Random.Source.MWC as MWC
 import           Data.Text (Text)
@@ -27,7 +28,7 @@ import           Morse.Types
 
 -- | A  monad for live Morse usage.
 newtype LiveMorseT m a
-  = LiveMorseT { unLiveMorseT :: (ReaderT (TVar MorseTree, MWC.Gen MWC.RealWorld) m) a }
+  = LiveMorseT { unLiveMorseT :: (ReaderT (TVar MorseTree, (TVar (PSQ.HashPSQ MorseQuery Int ()), MWC.Gen MWC.RealWorld)) m) a }
   deriving (Functor, Applicative, Monad, MonadIO)
 
 -- | Loads the content, and updats it periodicly
@@ -41,17 +42,17 @@ liveReloader u d dir = do
     delay (1::Double)
   pure mtTVar
 
-runLiveMorseT :: MonadIO m => TVar MorseTree -> LiveMorseT m a -> m a
-runLiveMorseT mt app = do
+runLiveMorseT :: MonadIO m => TVar (PSQ.HashPSQ MorseQuery Int ()) -> TVar MorseTree -> LiveMorseT m a -> m a
+runLiveMorseT unkTVar mt app = do
   g <- liftIO MWC.create
-  (`runReaderT` (mt, g)) . unLiveMorseT $ app
+  (`runReaderT` (mt, (unkTVar, g))) . unLiveMorseT $ app
 
 instance MonadIO m => Morse (LiveMorseT m) where
   logNovel _ _ = pure ()
   askMorseTree = LiveMorseT ask >>= liftIO . readTVarIO . fst
 
 askGen :: Monad m => LiveMorseT m (MWC.Gen MWC.RealWorld)
-askGen = snd <$> LiveMorseT ask
+askGen = snd . snd <$> LiveMorseT ask
 
 instance MonadIO m => MonadRandom (LiveMorseT m) where
   getRandomWord8  = askGen >>= liftIO . getRandomWord8From

@@ -38,6 +38,7 @@ common deps
    , http-client-tls ^>= 0.3.5.3
    , http-types ^>= 0.12
    , mtl ^>= 2.2
+   , psqueues ^>= 0.2
    , random-fu ^>= 0.2
    , random-source ^>= 0.3
    , servant-server ^>= 0.18
