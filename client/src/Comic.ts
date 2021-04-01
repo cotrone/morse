@@ -290,15 +290,19 @@ export default class Comic {
     labelEl.addEventListener('mousedown', handleDown)
     labelEl.addEventListener('touchstart', handleDown)
     labelEl.addEventListener('keydown', (ev) => {
+      if (!this.el.contains(ev.target as HTMLElement)) {
+        return
+      }
+
       if (!keyHeld && ev.key === ' ') {
         keyHeld = true
         handleDown()
       }
     })
 
-    labelEl.addEventListener('mouseup', handleUp)
-    labelEl.addEventListener('touchend', handleUp)
-    labelEl.addEventListener('keyup', (ev) => {
+    window.addEventListener('mouseup', handleUp)
+    window.addEventListener('touchend', handleUp)
+    window.addEventListener('keyup', (ev) => {
       if (ev.key === ' ') {
         keyHeld = false
         handleUp()
