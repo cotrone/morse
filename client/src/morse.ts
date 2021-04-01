@@ -56,6 +56,7 @@ export const toMorse = new Map([
   ['"', '.-..-.'],
   ['$', '...-..-'],
   ['@', '.--.-.'],
+  [' ', '/'],
 ])
 
 export const fromMorse = new Map(

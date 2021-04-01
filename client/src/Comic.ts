@@ -19,21 +19,28 @@ function clickTimesToMorse(clickTimes: Array<number>) {
     .replace(/^ /, '') // Strip a preceding space
 }
 
-type ServerSayResponse = {
-  state: string
-  say: string
-}
-
 class Client {
   stateId: string
 
-  async say(text: string): Promise<string> {
-    const resp = await fetch(
-      `${apiEndpoint}${this.stateId ? this.stateId + '/' : ''}${text}`,
-    )
-    const data: ServerSayResponse = await resp.json()
-    this.stateId = data.state
-    return data.say
+  async say(morse: string): Promise<string> {
+    const esc = (t: string) => t.replace(/ /g, '_')
+
+    const url = [
+      apiEndpoint,
+      this.stateId ? esc(this.stateId) + '/' : '',
+      esc(morse),
+    ].join('')
+
+    const resp = await fetch(url)
+    if (!resp.ok) {
+      throw new Error(`Unexpected response ${resp}`)
+    }
+
+    const data = await resp.text()
+
+    const [state, respMorse] = data.split('/')
+    this.stateId = state.trim()
+    return respMorse.trim()
   }
 }
 
@@ -161,7 +168,6 @@ export default class Comic {
   el: HTMLDivElement
   hud: MorseHUD
   clickTimes: Array<number>
-  playbackText: string
   updateInterval: number
   playTimeout: number
   sendTimeout: number
@@ -276,35 +282,34 @@ export default class Comic {
   }
 
   async send(morse: string) {
-    const text = window.morse.decode(morse)
-
     const newClickTimes: Array<number> = []
     this.clickTimes = newClickTimes
     this.hud.update('')
 
+    const text = window.morse.decode(morse)
     if (!text.length) {
       return
     }
 
     console.log(`Said: [${morse}] "${text}"`)
 
-    const responseText = await this.client.say(text)
+    const responseMorse = await this.client.say(morse)
 
     if (this.clickTimes != newClickTimes || this.clickTimes.length) {
       // If the user has input anything since, disregard this response.
       return
     }
-    this.playback(responseText)
+    this.playback(responseMorse)
   }
 
-  playback(text: string) {
+  playback(morse: string) {
+    const text = window.morse.decode(morse)
+
     if (this.impatient) {
       console.log(`Received: [${window.morse.encode(text)}] "${text}"`)
     }
 
     const inputEl = this.el.querySelector('input')
-    this.playbackText = text
-    const morse = window.morse.encode(text)
 
     const delays: Array<[boolean, number]> = []
     for (const c of morse) {
