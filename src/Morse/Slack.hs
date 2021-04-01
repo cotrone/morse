@@ -21,6 +21,8 @@ import Data.Text.Lazy.Builder
 import Data.Ord
 import qualified Data.Text.Lazy.Builder.Int as Builder
 import qualified Data.Map.Strict as Map
+import System.IO (stdout)
+import GHC.IO.Handle (hFlush)
 
 -- Slack formatting
 
@@ -65,14 +67,19 @@ startSlackThread :: IO Text -> Int -> IO ()
 startSlackThread getMessage delaySeconds = do
   urlResult <- readSlackCallbackUrl
   case urlResult of
-    Left err -> putStrLn $ "Slack posting not running: " <> err
+    Left err -> do
+      putStrLn $ "Slack posting not running: " <> err
+      hFlush stdout
     Right url -> do
       putStrLn $ "Starting slack posting thread"
-      _threadId <- flip forkFinally onException $ do
+      hFlush stdout
+      _threadId <- flip forkFinally (\ex -> onException ex >> hFlush stdout) $ do
         slackConn <- initSlack url
         forever $ do
           response <- sendSlackMessage slackConn =<< getMessage
-          unless (successfulResponse response) $ putStrLn $ "Unable to send a slack message message: " <> show (responseStatus response) 
+          unless (successfulResponse response) $ do
+            putStrLn $ "Unable to send a slack message message: " <> show (responseStatus response) 
+            hFlush stdout
           threadDelay $ (delaySeconds * (10 :: Int) ^ (6 :: Int))
       pure ()
   where
