@@ -89,7 +89,7 @@ startSlackThread getMessage delaySeconds = do
 -- | Read the slack callback url from an environtment variable SLACK_MESSAGE_CALLBACK_URL
 readSlackCallbackUrl :: IO (Either String SlackCallbackUrl)
 readSlackCallbackUrl =
-  maybe (Left "Unable to lookup SLACK_MESSAGE_CALLBACK_URL environment variable") (Right . SlackCallbackUrl)
+  maybe (Left "Unable to lookup SLACK_MESSAGE_CALLBACK_URL environment variable") (Right . SlackCallbackUrl . ("https://hooks.slack.com/services/" <>))
     <$> lookupEnv "SLACK_MESSAGE_CALLBACK_URL"
 
 initSlack :: SlackCallbackUrl -> IO SlackConnection
