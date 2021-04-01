@@ -350,7 +350,7 @@ export default class Comic {
         return
       }
 
-      if (!keyHeld && ev.key === ' ') {
+      if (!keyHeld && (ev.key === ' ' || ev.key === 'Enter')) {
         keyHeld = true
         handleDown(ev)
       }
@@ -359,7 +359,7 @@ export default class Comic {
     window.addEventListener('mouseup', handleUp)
     window.addEventListener('touchend', handleUp)
     window.addEventListener('keyup', (ev) => {
-      if (ev.key === ' ') {
+      if (ev.key === ' ' || ev.key === 'Enter') {
         keyHeld = false
         handleUp(ev)
       }
