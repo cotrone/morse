@@ -72,7 +72,6 @@ export function decodeMorse(morse: string) {
 
 export function encodeMorse(text: string) {
   return text
-    .replace(/\s/g, '')
     .split('')
     .map((c) => toMorse.get(c.toUpperCase()) || null)
     .filter((x) => x)
