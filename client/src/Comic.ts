@@ -43,6 +43,67 @@ class Client {
   }
 }
 
+class Speaker {
+  TARGET_GAIN = 0.2
+
+  isEnabled: boolean
+  ctx: AudioContext
+  gainNode: GainNode
+
+  constructor() {
+    this.isEnabled = false
+    this.ctx = null
+    this.gainNode = null
+  }
+
+  enable() {
+    this.isEnabled = true
+  }
+
+  disable() {
+    this.isEnabled = false
+    this.off()
+  }
+
+  on() {
+    if (!this.isEnabled) {
+      return
+    }
+
+    if (!this.ctx) {
+      this.ctx = new AudioContext()
+
+      const oscNode = this.ctx.createOscillator()
+      this.gainNode = this.ctx.createGain()
+
+      oscNode.type = 'sine'
+      oscNode.frequency.value = 440
+      oscNode.connect(this.gainNode)
+
+      this.gainNode.gain.value = 0
+      this.gainNode.connect(this.ctx.destination)
+
+      oscNode.start()
+    }
+
+    this.gainNode.gain.cancelAndHoldAtTime(this.ctx.currentTime)
+    this.gainNode.gain.linearRampToValueAtTime(
+      this.TARGET_GAIN,
+      this.ctx.currentTime + 0.01,
+    )
+  }
+
+  off() {
+    if (!this.ctx) {
+      return
+    }
+    this.gainNode.gain.linearRampToValueAtTime(
+      0,
+      this.ctx.currentTime + DOT_LENGTH / 1000 / 2,
+    )
+  }
+}
+
 class MorseHUD {
   HUD_LENGTH = 6
   HUD_CHAR_WIDTH = 50
@@ -169,6 +230,7 @@ export default class Comic {
   impatient: boolean
   el: HTMLDivElement
   hud: MorseHUD
+  speaker: Speaker
   clickTimes: Array<number>
   updateTimeout: number
   playTimeout: number
@@ -184,6 +246,7 @@ export default class Comic {
     this.updateTimeout = null
     this.client = new Client()
     this.clickTimes = []
+    this.speaker = new Speaker()
   }
 
   start() {
@@ -200,8 +263,10 @@ export default class Comic {
       inputEl.checked = isOn
       if (isOn) {
         this.lastOn = Date.now()
+        this.speaker.on()
       } else {
         this.lastOff = Date.now()
+        this.speaker.off()
       }
       this.clickTimes.push(this.lastOff - this.lastOn)
     }
@@ -305,6 +370,12 @@ export default class Comic {
     }
 
     console.log(`Said: [${morse}] "${text}"`)
+
+    if (text === 'BEEP') {
+      this.speaker.enable()
+    } else if (text === 'MUTE' || text === 'QUIET') {
+      this.speaker.disable()
+    }
 
     const responseMorse = await this.client.say(morse)
 
