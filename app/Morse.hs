@@ -21,7 +21,7 @@ main :: IO ()
 main = do
   mt <- liveReloader (read "eccfd622-9197-11eb-8001-8c16454fb02a") "Wut mate?" "content"
   unk <- newTVarIO PSQ.empty
-  startSlackThread (getNextSlackMessage 25 mt unk) 10
+  startSlackThread (getNextSlackMessage 50 mt unk) (5 * 60)
   Warp.runEnv 8080 $ waiMorse (runLiveMorseT unk mt) requestToken
 
 getNextSlackMessage :: Int -> TVar MorseTree -> TVar (PSQ.HashPSQ MorseQuery (Down Int64) UnkFreq) -> IO Text
