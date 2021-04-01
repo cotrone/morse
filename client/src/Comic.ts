@@ -142,9 +142,11 @@ class MorseHUD {
       if (char === '.') {
         charEl.style.width = `${this.HUD_CHAR_SIZE}px`
         charEl.style.borderRadius = `${this.HUD_CHAR_SIZE}px`
+        charEl.style.opacity = '1'
       } else if (char === '-') {
         charEl.style.width = `${Math.floor(3.5 * this.HUD_CHAR_SIZE)}px`
         charEl.style.borderRadius = '2px'
+        charEl.style.opacity = '1'
       } else {
         charEl.style.opacity = '0'
       }
@@ -259,12 +261,19 @@ export default class Comic {
     // Display as if the user took a final action now.
     let clickTimes
     const now = Date.now()
+
     if (this.lastOn > this.lastOff) {
       clickTimes = [...this.clickTimes, now - this.lastOn + 1]
     } else {
       clickTimes = [...this.clickTimes, this.lastOff - now - 1]
     }
-    const morse = clickTimesToMorse(clickTimes)
+
+    let morse = clickTimesToMorse(clickTimes)
+    if (this.lastOff > this.lastOn) {
+      // Add a blank space for the next character if not holding down.
+      morse += ' '
+    }
+
     this.hud.update(morse)
 
     clearTimeout(this.updateTimeout)
