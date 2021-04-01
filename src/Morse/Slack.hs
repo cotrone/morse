@@ -38,7 +38,7 @@ startSlackThread getMessage delaySeconds = do
     onException (Left ex) = putStrLn $ "Slack thread closed with an exception: "  <> show ex
     onException (Right _) = putStrLn "Slack thread closed gracefully somehow"
 
--- TODO read the slack callback url from an environtment variable SLACK_MESSAGE_CALLBACK_URL
+-- | Read the slack callback url from an environtment variable SLACK_MESSAGE_CALLBACK_URL
 readSlackCallbackUrl :: IO (Either String SlackCallbackUrl)
 readSlackCallbackUrl =
   maybe (Left "Unable to lookup SLACK_MESSAGE_CALLBACK_URL environment variable)") (Right . SlackCallbackUrl)
