@@ -3,7 +3,7 @@ import { apiEndpoint } from '../comic'
 const PLAYBACK_DELAY = 250
 const SEND_DELAY = 4000
 const DOT_LENGTH = 150
-const HUD_DELAY = 5000
+const HUD_DELAY = 3000
 
 function clickTimesToMorse(clickTimes: Array<number>) {
   return clickTimes
