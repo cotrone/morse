@@ -1,6 +1,5 @@
 import { apiEndpoint } from '../comic'
 
-const PLAYBACK_DELAY = 250
 const SEND_DELAY = 3000
 const DOT_LENGTH = 150
 const HUD_DELAY = 3000
@@ -236,6 +235,7 @@ export default class Comic {
   updateTimeout: number
   playTimeout: number
   sendTimeout: number
+  playbackDelay: number
   lastOff: number
   lastOn: number
   client: Client
@@ -247,6 +247,7 @@ export default class Comic {
     this.updateTimeout = null
     this.client = new Client()
     this.clickTimes = []
+    this.playbackDelay = 250
     this.speaker = new Speaker()
   }
 
@@ -378,11 +379,7 @@ export default class Comic {
 
     console.log(`Said: [${morse}] "${text}"`)
 
-    if (text === 'BEEP') {
-      this.speaker.enable()
-    } else if (text === 'MUTE' || text === 'QUIET') {
-      this.speaker.disable()
-    }
+    this.handleCommand(text)
 
     const responseMorse = await this.client.say(morse)
 
@@ -400,21 +397,23 @@ export default class Comic {
       console.log(`Received: [${window.morse.encode(text)}] "${text}"`)
     }
 
+    this.handleAction(text)
+
     const inputEl = this.el.querySelector('input')
 
     const delays: Array<[boolean, number]> = []
     for (const c of morse) {
       if (c === '.') {
-        delays.push([true, PLAYBACK_DELAY])
-        delays.push([false, PLAYBACK_DELAY])
+        delays.push([true, this.playbackDelay])
+        delays.push([false, this.playbackDelay])
       } else if (c === '-') {
-        delays.push([true, PLAYBACK_DELAY * 3])
-        delays.push([false, PLAYBACK_DELAY])
+        delays.push([true, this.playbackDelay * 3])
+        delays.push([false, this.playbackDelay])
       } else if (c === ' ') {
-        delays.push([false, PLAYBACK_DELAY * 3])
+        delays.push([false, this.playbackDelay * 3])
       }
     }
-    delays.push([false, PLAYBACK_DELAY * 7])
+    delays.push([false, this.playbackDelay * 7])
 
     let idx = 0
     let hasPrinted = false
@@ -439,5 +438,23 @@ export default class Comic {
     }
 
     tick()
+  }
+
+  handleCommand(text: string) {
+    if (text === 'BEEP') {
+      this.speaker.enable()
+    } else if (text === 'MUTE' || text === 'QUIET') {
+      this.speaker.disable()
+    } else if (text === 'QRS') {
+      this.playbackDelay = Math.min(500, this.playbackDelay * 1.2)
+    } else if (text === 'QRQ') {
+      this.playbackDelay = Math.max(50, this.playbackDelay * (1 / 1.2))
+    }
+  }
+
+  handleAction(text: string) {
+    if (text.startsWith('//')) {
+      window.open('https:' + text)
+    }
   }
 }
