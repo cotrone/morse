@@ -272,7 +272,8 @@ export default class Comic {
       this.clickTimes.push(this.lastOff - this.lastOn)
     }
 
-    const handleDown = () => {
+    const handleDown = (ev: Event) => {
+      ev.preventDefault()
       clearTimeout(this.playTimeout)
       clearTimeout(this.sendTimeout)
 
@@ -281,7 +282,8 @@ export default class Comic {
       this.updateHUD()
     }
 
-    const handleUp = () => {
+    const handleUp = (ev: Event) => {
+      ev.preventDefault()
       setOn(false)
       this.updateHUD()
       this.interpretClicks()
@@ -297,7 +299,7 @@ export default class Comic {
 
       if (!keyHeld && ev.key === ' ') {
         keyHeld = true
-        handleDown()
+        handleDown(ev)
       }
     })
 
@@ -306,7 +308,7 @@ export default class Comic {
     window.addEventListener('keyup', (ev) => {
       if (ev.key === ' ') {
         keyHeld = false
-        handleUp()
+        handleUp(ev)
       }
     })
 
