@@ -21,13 +21,16 @@ function clickTimesToMorse(clickTimes: Array<number>) {
 class Client {
   stateId: string
 
-  async say(morse: string): Promise<string> {
-    const esc = (t: string) => t.replace(/ /g, '_')
+  escape(t: string) {
+    return t.replace(/ /g, '_')
+  }
 
+  async say(morse: string): Promise<string> {
     const url = [
       apiEndpoint,
-      this.stateId ? esc(this.stateId) + '/' : '',
-      esc(morse),
+      '/.../',
+      this.stateId ? this.escape(this.stateId) + '/' : '',
+      this.escape(morse),
     ].join('')
 
     const resp = await fetch(url)
@@ -40,6 +43,11 @@ class Client {
     const [state, ...respMorse] = data.split(' / ')
     this.stateId = state.trim()
     return respMorse.join(' / ').trim()
+  }
+
+  open(key: string) {
+    const morseKey = window.morse.encode(key)
+    window.open(`${apiEndpoint}/.-./${this.escape(morseKey)}`)
   }
 }
 
@@ -131,7 +139,7 @@ class Speaker {
       oscNode.start()
     }
 
-    this.gainNode.gain.cancelAndHoldAtTime(this.ctx.currentTime)
+    this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime)
     this.gainNode.gain.linearRampToValueAtTime(
       this.TARGET_GAIN,
       this.ctx.currentTime + 0.01,
@@ -522,7 +530,7 @@ export default class Comic {
 
   handleAction(text: string) {
     if (text.startsWith('//')) {
-      window.open('https:' + text)
+      this.client.open(text.substr(2))
     }
   }
 }
