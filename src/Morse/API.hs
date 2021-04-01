@@ -87,6 +87,7 @@ splitDialogTrans (Transition (SpecificState ss) q rsp rs) = Right (insensitizeQu
 
 readMorseTable :: UUID -> Text -> FilePath -> IO MorseTree
 readMorseTable defState defResp fp = do
+  putStrLn ("Loading "<>fp) 
   csvData <- BL.readFile fp
   case CSV.decodeByName csvData of
     Left err -> fail err
@@ -108,6 +109,7 @@ readMorseTable defState defResp fp = do
 
 readMorseResponses :: UUID -> Text -> FilePath -> IO MorseTree
 readMorseResponses defState defResp fp = do
+  putStrLn ("Loading "<>fp) 
   csvData <- BL.readFile fp
   case CSV.decodeByName csvData of
     Left err -> fail err
