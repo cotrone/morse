@@ -69,7 +69,7 @@ class MorseHUD {
         left: 50%;
         opacity: 0;
         transform: translateX(-50%);
-        transition: all 5s ease-in;
+        transition: all 5s linear;
         pointer-events: none;
       `,
     )
