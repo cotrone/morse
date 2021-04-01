@@ -56,7 +56,6 @@ export const toMorse = new Map([
   ['"', '.-..-.'],
   ['$', '...-..-'],
   ['@', '.--.-.'],
-  [' ', '/'],
 ])
 
 export const fromMorse = new Map(
@@ -66,14 +65,14 @@ export const fromMorse = new Map(
 export function decodeMorse(morse: string) {
   return morse
     .split(' ')
-    .map((c) => fromMorse.get(c) || '')
+    .map((c) => (c === '/' ? ' ' : fromMorse.get(c) || ''))
     .join('')
 }
 
 export function encodeMorse(text: string) {
   return text
     .split('')
-    .map((c) => toMorse.get(c.toUpperCase()) || null)
+    .map((c) => (c === ' ' ? '/' : toMorse.get(c.toUpperCase()) || null))
     .filter((x) => x)
     .join(' ')
 }
