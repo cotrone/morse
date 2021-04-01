@@ -70,7 +70,7 @@ sayWithout token = say token Nothing
 
 say :: Morse m => Token -> Maybe MorseUUID -> [Text] -> m MorseResponse
 say (Token t) fromState phraseMorse = do
-  let phrase = decodeMorse $ T.intercalate "/" phraseMorse
+  let phrase = T.strip $ decodeMorse $ T.intercalate "/" phraseMorse
   lookupMorse t (unMorseUUID <$> fromState, phrase)
 
 data MorseText
