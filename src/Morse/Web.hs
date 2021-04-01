@@ -4,10 +4,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeFamilies #-}
 module Morse.Web
  ( waiMorse
  , MorseAPI, morseAPI
  , morseServer
+ , Token (..)
+ , TokenAuthHandler
  ) where
 
 import           Data.Text (Text)
@@ -23,35 +26,51 @@ import           Morse.Types
 import Network.HTTP.Media ((//), (/:))
 import qualified Network.Wai as WAI
 import           Servant
+import           Servant.Server.Experimental.Auth
 
 type MorseAPI
  = MorseSay
 
 type MorseSay
-  =    "..." :> Capture "uuid" MorseUUID :> CaptureAll "phrase" Text :> Get '[MorseText] MorseResponse
-  :<|> "..." :>                             CaptureAll "phrase" Text :> Get '[MorseText] MorseResponse
+  = AuthProtect Token :> 
+      ( "..." :> Capture "uuid" MorseUUID :> CaptureAll "phrase" Text :> Get '[MorseText] MorseResponse
+         :<|> "..." :>                       CaptureAll "phrase" Text :> Get '[MorseText] MorseResponse )
 
 morseAPI :: Proxy MorseAPI
 morseAPI = Proxy
 
+newtype Token = Token { unToken :: Text }
+
+type instance AuthServerData (AuthProtect Token) = Token
+
+type TokenAuthHandler = AuthHandler WAI.Request Token
+
 waiMorse :: (Morse m)
          => (forall a . m a -> Handler a)
+         -> (WAI.Request -> Token) -- ^ Get a token out of a request
          -> WAI.Application
-waiMorse runMorse = serve morseAPI (hoistServer morseAPI runMorse morseServer)
+waiMorse runMorse requestToken =
+  serveWithContext morseAPI context $ hoistServerWithContext morseAPI contextProxy runMorse morseServer
+  where
+    contextProxy :: Proxy '[TokenAuthHandler]
+    contextProxy = Proxy
+    context :: Context '[TokenAuthHandler]
+    context = authHandler :. EmptyContext
+    authHandler = AuthHandler $ pure . requestToken
 
 morseServer :: Morse m => ServerT MorseAPI m
-morseServer = sayWith :<|> sayWithout
+morseServer token = sayWith token :<|> sayWithout token
 
-sayWith :: Morse m => MorseUUID -> [Text] -> m MorseResponse
-sayWith u = say (Just u)
+sayWith :: Morse m => Token -> MorseUUID -> [Text] -> m MorseResponse
+sayWith token u = say token (Just u)
 
-sayWithout :: Morse m => [Text] -> m MorseResponse
-sayWithout = say Nothing
+sayWithout :: Morse m => Token -> [Text] -> m MorseResponse
+sayWithout token = say token Nothing
 
-say :: Morse m => Maybe MorseUUID -> [Text] -> m MorseResponse
-say fromState phraseMorse = do
+say :: Morse m => Token -> Maybe MorseUUID -> [Text] -> m MorseResponse
+say (Token t) fromState phraseMorse = do
   let phrase = decodeMorse $ T.intercalate "/" phraseMorse
-  lookupMorse ("Give me a user token here!"::Text) (unMorseUUID <$> fromState, phrase)
+  lookupMorse t (unMorseUUID <$> fromState, phrase)
 
 data MorseText
 

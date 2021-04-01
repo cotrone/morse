@@ -4,5 +4,5 @@ module.exports = {
   url: '/tbd',
   width: 740,
   height: 480,
-  apiEndpoint: 'https://morse.xkcd.com:8000/say/',
+  apiEndpoint: 'https://morse.xkcd.com:8000/.../',
 }
