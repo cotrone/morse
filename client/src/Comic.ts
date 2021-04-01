@@ -131,7 +131,7 @@ class Speaker {
       oscNode.start()
     }
 
-    this.gainNode.gain.cancelAndHoldAtTime(this.ctx.currentTime)
+    this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime)
     this.gainNode.gain.linearRampToValueAtTime(
       this.TARGET_GAIN,
       this.ctx.currentTime + 0.01,
