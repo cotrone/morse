@@ -3,6 +3,6 @@ module.exports = {
   alt: 'Check check check ... chhecck chhecck chhecck ... check check check',
   url: '/2445',
   width: 740,
-  height: 480,
+  height: 448,
   apiEndpoint: '/2445/morse/.../',
 }

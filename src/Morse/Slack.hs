@@ -43,14 +43,14 @@ toSlackMessage tree res = TL.toStrict . toLazyText . mconcat $ (\r -> displayRes
   where
     displayResult :: (MorseQuery, Down Int64, UnkFreq) -> Builder
     displayResult ((mUUID, queryText), (Down p), _f) =
-      Builder.decimal p <> " - " <> fromText queryText <> displayState
+      Builder.decimal p <> ": " <> fromText queryText <> displayState
       where
         displayState :: Builder
         displayState  = 
           case mUUID of
             Nothing -> mempty
-            Just uuid -> " - " <> (maybe "* NO STATE FOUND *" (fromText . displayTuple) $ Map.lookup uuid (_mtStateDecode tree))
-    displayTuple (l, r) = l <> " - " <> r
+            Just uuid -> " \t " <> (maybe "* NO STATE FOUND *" (fromText . displayTuple) $ Map.lookup uuid (_mtStateDecode tree))
+    displayTuple (l, r) = "(" <> l <> ", " <> r <> ")"
 
 -- Slack API
 

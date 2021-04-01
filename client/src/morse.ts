@@ -62,6 +62,8 @@ export const fromMorse = new Map(
   Array.from(toMorse.entries(), ([k, v]) => [v, k]),
 )
 
+fromMorse.set('...---...', 'SOS')
+
 export function decodeMorse(morse: string) {
   return morse
     .split(' ')
