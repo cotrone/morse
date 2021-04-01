@@ -37,9 +37,9 @@ class Client {
 
     const data = await resp.text()
 
-    const [state, respMorse] = data.split('/')
+    const [state, ...respMorse] = data.split(' / ')
     this.stateId = state.trim()
-    return respMorse.trim()
+    return respMorse.join(' / ').trim()
   }
 }
 
