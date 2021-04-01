@@ -3,6 +3,7 @@ import { apiEndpoint } from '../comic'
 const SEND_DELAY = 3000
 const DOT_LENGTH = 150
 const HUD_DELAY = 3000
+const IDLE_DELAY = 30 * 1000
 
 function clickTimesToMorse(clickTimes: Array<number>) {
   return clickTimes
@@ -324,6 +325,12 @@ export default class Comic {
     })
 
     this.printIntro()
+
+    setTimeout(() => {
+      if (!this.lastOn) {
+        this.playback(window.morse.encode('CQ'))
+      }
+    }, IDLE_DELAY)
   }
 
   printIntro() {
