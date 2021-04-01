@@ -156,6 +156,7 @@ class MorseHUD {
       this.elStack = []
       for (const el of oldStack) {
         el.style.opacity = '0'
+        el.style.transitionDuration = `${this.HUD_ANIM_DURATION * 2}ms`
       }
       setTimeout(() => {
         for (const el of oldStack) {
