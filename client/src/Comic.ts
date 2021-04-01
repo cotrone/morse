@@ -104,7 +104,8 @@ class MorseHUD {
       return
     }
 
-    if (morse.length > lastMorse.length) {
+    const newCount = morse.length - lastMorse.length
+    for (let i = 0; i < newCount; i++) {
       const newBoxEl = document.createElement('div')
       newBoxEl.setAttribute(
         'style',
@@ -131,7 +132,7 @@ class MorseHUD {
       )
       newBoxEl.appendChild(newCharEl)
       this.el.appendChild(newBoxEl)
-      this.el.offsetTop
+      this.el.offsetTop // Force layout to set transition start values
       this.elStack.unshift(newBoxEl)
     }
 
@@ -152,7 +153,7 @@ class MorseHUD {
       boxEl.style.transform = `translateX(${Math.floor(x)}px)`
     }
 
-    if (this.elStack.length > this.HUD_LENGTH) {
+    while (this.elStack.length > this.HUD_LENGTH) {
       const oldBoxEl = this.elStack.pop()
       oldBoxEl.style.opacity = '0'
       setTimeout(() => {
@@ -201,11 +202,11 @@ export default class Comic {
         this.lastOff = Date.now()
       }
       this.clickTimes.push(this.lastOff - this.lastOn)
-      this.interpretClicks()
     }
 
     const handleDown = () => {
       clearTimeout(this.playTimeout)
+      clearTimeout(this.sendTimeout)
       clearInterval(this.updateInterval)
 
       setOn(true)
@@ -218,6 +219,7 @@ export default class Comic {
 
     const handleUp = () => {
       setOn(false)
+      this.interpretClicks()
       inputEl.focus()
     }
 
@@ -259,10 +261,11 @@ export default class Comic {
   updateHUD() {
     // Display as if the user took a final action now.
     let clickTimes
+    const now = Date.now()
     if (this.lastOn > this.lastOff) {
-      clickTimes = [...this.clickTimes, Date.now() - this.lastOn + 1]
+      clickTimes = [...this.clickTimes, now - this.lastOn + 1]
     } else {
-      clickTimes = [...this.clickTimes, this.lastOff - Date.now()]
+      clickTimes = [...this.clickTimes, this.lastOff - now + 1]
     }
     const morse = clickTimesToMorse(clickTimes)
     this.hud.update(morse)
