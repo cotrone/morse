@@ -265,7 +265,7 @@ export default class Comic {
     if (this.lastOn > this.lastOff) {
       clickTimes = [...this.clickTimes, now - this.lastOn + 1]
     } else {
-      clickTimes = [...this.clickTimes, this.lastOff - now + 1]
+      clickTimes = [...this.clickTimes, this.lastOff - now - 1]
     }
     const morse = clickTimesToMorse(clickTimes)
     this.hud.update(morse)
