@@ -39,7 +39,7 @@ class Client {
 }
 
 export default class Comic {
-  consoleEnabled: boolean
+  impatient: boolean
   el: HTMLDivElement
   clickTimes: Array<number>
   playbackText: string
@@ -52,7 +52,6 @@ export default class Comic {
     this.sendTimeout = null
     this.client = new Client()
     this.clickTimes = []
-    this.consoleEnabled = false
   }
 
   start() {
@@ -62,7 +61,7 @@ export default class Comic {
 
     let lastOff: number = Date.now()
     let lastOn: number = 0
-    let holdTimeout: number = null
+    let keyHeld = false
 
     const setOn = (isOn: boolean) => {
       inputEl.checked = isOn
@@ -75,31 +74,33 @@ export default class Comic {
       this.interpretClicks()
     }
 
-    const handleDown = (ev: MouseEvent) => {
+    const handleDown = () => {
       clearTimeout(this.playTimeout)
-      clearTimeout(holdTimeout)
-      holdTimeout = window.setTimeout(() => {
-        setOn(true)
-        holdTimeout = null
-      }, HOLD_DELAY)
+      setOn(true)
     }
 
-    const handleUp = (ev: MouseEvent) => {
-      if (holdTimeout) {
-        setOn(!inputEl.checked)
-      } else {
-        setOn(false)
-      }
-
-      clearTimeout(holdTimeout)
-      holdTimeout = null
+    const handleUp = () => {
+      setOn(false)
+      inputEl.focus()
     }
 
     labelEl.addEventListener('mousedown', handleDown)
     labelEl.addEventListener('touchstart', handleDown)
+    labelEl.addEventListener('keydown', (ev) => {
+      if (!keyHeld && ev.key === ' ') {
+        keyHeld = true
+        handleDown()
+      }
+    })
 
     labelEl.addEventListener('mouseup', handleUp)
     labelEl.addEventListener('touchend', handleUp)
+    labelEl.addEventListener('keyup', (ev) => {
+      if (ev.key === ' ') {
+        keyHeld = false
+        handleUp()
+      }
+    })
 
     labelEl.addEventListener('click', (ev: MouseEvent) => {
       ev.preventDefault()
@@ -122,9 +123,12 @@ export default class Comic {
     const morse = clickTimesToMorse(this.clickTimes).replace(/^ /, '') // Strip a preceding space
 
     clearTimeout(this.sendTimeout)
-    this.sendTimeout = window.setTimeout(() => {
-      this.send(morse)
-    }, SEND_DELAY)
+    this.sendTimeout = window.setTimeout(
+      () => {
+        this.send(morse)
+      },
+      this.impatient ? SEND_DELAY / 4 : SEND_DELAY,
+    )
   }
 
   async send(morse: string) {
@@ -149,6 +153,10 @@ export default class Comic {
   }
 
   playback(text: string) {
+    if (this.impatient) {
+      console.log(`Received: [${window.morse.encode(text)}] "${text}"`)
+    }
+
     const inputEl = this.el.querySelector('input')
     this.playbackText = text
     const morse = window.morse.encode(text)
@@ -173,7 +181,7 @@ export default class Comic {
       const [isOn, delay] = delays[idx]
       inputEl.checked = isOn
 
-      if (idx === delays.length - 1 && !hasPrinted) {
+      if (!this.impatient && idx === delays.length - 1 && !hasPrinted) {
         console.log(`Received: [${window.morse.encode(text)}] "${text}"`)
         hasPrinted = true
       }

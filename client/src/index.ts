@@ -17,7 +17,7 @@ export class BeepComicGlobal {
     )
     comicEl.innerHTML = `
       <label style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center">
-        <input type="checkbox">
+        <input type="checkbox" style="outline: none">
       </label>
     `
     comicEl.title = comicData.alt
@@ -25,6 +25,8 @@ export class BeepComicGlobal {
   }
 
   send: (text: string) => void
+
+  hurryUp: () => string
 }
 
 function main() {
@@ -35,6 +37,11 @@ function main() {
 
   window.BeepComic.send = (morse: string) => {
     comic.send(morse)
+  }
+
+  window.BeepComic.hurryUp = () => {
+    comic.impatient = true
+    return "Ok fine. But you're like, totally breaking the immersion."
   }
 }
 
