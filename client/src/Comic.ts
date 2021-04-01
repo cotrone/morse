@@ -1,6 +1,5 @@
 import { apiEndpoint } from '../comic'
 
-const HOLD_DELAY = 150
 const PLAYBACK_DELAY = 250
 const SEND_DELAY = 4000
 
