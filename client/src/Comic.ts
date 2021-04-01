@@ -426,6 +426,7 @@ export default class Comic {
       }
 
       idx = (idx + 1) % delays.length
+      clearTimeout(this.playTimeout)
       this.playTimeout = window.setTimeout(tick, delay)
     }
 
