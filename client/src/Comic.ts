@@ -49,20 +49,65 @@ class Speaker {
   isEnabled: boolean
   ctx: AudioContext
   gainNode: GainNode
+  parentEl: HTMLElement
+  el: HTMLButtonElement
 
-  constructor() {
+  constructor(parentEl: HTMLElement) {
     this.isEnabled = false
     this.ctx = null
     this.gainNode = null
+
+    this.parentEl = parentEl
+    this.el = document.createElement('button')
+    this.el.setAttribute(
+      'style',
+      `
+        position: absolute;
+        bottom: 6px;
+        right: 6px;
+        background: none;
+        border: none;
+        font-size: 20px;
+        line-height: 20px;
+        text-align: center;
+        width: 30px;
+        height: 30px;
+        padding: 2px;
+        box-sizing: content-box;
+        opacity: 0;
+        filter: grayscale(1);
+        transition: all 5s linear;
+      `,
+    )
+    this.el.addEventListener('click', () => {
+      if (this.isEnabled) {
+        this.disable()
+      } else {
+        this.enable()
+      }
+    })
+    this.parentEl.appendChild(this.el)
+    this.update()
+  }
+
+  show() {
+    this.el.style.opacity = '.2'
+  }
+
+  update() {
+    this.el.innerText = this.isEnabled ? '🔊' : '🔈'
+    this.el.title = this.isEnabled ? 'Mute sound' : 'Enable sound'
   }
 
   enable() {
     this.isEnabled = true
+    this.update()
   }
 
   disable() {
     this.isEnabled = false
     this.off()
+    this.update()
   }
 
   on() {
@@ -111,13 +156,13 @@ class MorseHUD {
   HUD_ANIM_DURATION = DOT_LENGTH
   HUD_FAST_ANIM_DURATION = DOT_LENGTH / 2
 
-  parentEl: HTMLDivElement
+  parentEl: HTMLElement
   el: HTMLDivElement
   shown: boolean
   lastMorse: string
   elStack: Array<HTMLDivElement>
 
-  constructor(parentEl: HTMLDivElement) {
+  constructor(parentEl: HTMLElement) {
     this.parentEl = parentEl
     this.el = document.createElement('div')
     this.el.setAttribute(
@@ -140,14 +185,11 @@ class MorseHUD {
     this.shown = false
   }
 
-  update(morse: string) {
-    if (!this.shown) {
-      this.shown = true
-      setTimeout(() => {
-        this.el.style.opacity = '1'
-      }, HUD_DELAY)
-    }
+  show() {
+    this.el.style.opacity = '1'
+  }
 
+  update(morse: string) {
     const lastMorse = this.lastMorse
     this.lastMorse = morse
 
@@ -232,6 +274,7 @@ export default class Comic {
   el: HTMLDivElement
   hud: MorseHUD
   speaker: Speaker
+  isHUDShown: boolean
   clickTimes: Array<number>
   updateTimeout: number
   playTimeout: number
@@ -244,12 +287,13 @@ export default class Comic {
   constructor(el: HTMLDivElement) {
     this.el = el
     this.hud = new MorseHUD(el)
+    this.speaker = new Speaker(this.el)
+    this.isHUDShown = false
     this.sendTimeout = null
     this.updateTimeout = null
     this.client = new Client()
     this.clickTimes = []
     this.playbackDelay = 250
-    this.speaker = new Speaker()
   }
 
   start() {
@@ -281,6 +325,7 @@ export default class Comic {
 
       setOn(true)
 
+      this.showHUD()
       this.updateHUD()
     }
 
@@ -341,6 +386,20 @@ export default class Comic {
       lines.push(` ${char} [${code}]`)
     }
     console.log(lines.join('\n'))
+  }
+
+  showHUD() {
+    if (!this.isHUDShown) {
+      this.isHUDShown = true
+
+      setTimeout(() => {
+        this.hud.show()
+      }, HUD_DELAY)
+
+      setTimeout(() => {
+        this.speaker.show()
+      }, HUD_DELAY * 2)
+    }
   }
 
   updateHUD() {
