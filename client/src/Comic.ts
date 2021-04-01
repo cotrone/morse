@@ -9,8 +9,7 @@ function clickTimesToMorse(clickTimes: Array<number>) {
   return clickTimes
     .map((t) => {
       if (t < 0) {
-        // Technically, the space between chars should be 3x, but let's give them a little more time.
-        return Math.abs(t) > DOT_LENGTH * 6 ? ' ' : ''
+        return Math.abs(t) > DOT_LENGTH * 3 ? ' ' : ''
       } else {
         return t > DOT_LENGTH * 3 ? '-' : '.'
       }
