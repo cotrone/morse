@@ -134,6 +134,8 @@ class Speaker {
     }
 
     if (!this.ctx) {
+      // @ts-ignore
+      const AudioContext = window.AudioContext || window.webkitAudioContext
       this.ctx = new AudioContext()
 
       const oscNode = this.ctx.createOscillator()
