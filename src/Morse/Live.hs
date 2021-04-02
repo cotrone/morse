@@ -29,7 +29,6 @@ import qualified Data.HashPSQ as PSQ
 --import qualified Data.HyperLogLog as HLL
 import           Data.Int
 import           Data.Random.Source
-import qualified Data.Random.Source.MWC as MWC
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Text (Text)
@@ -42,7 +41,7 @@ type UnkFreq = (Set ByteString)
 
 -- | A  monad for live Morse usage.
 newtype LiveMorseT m a
-  = LiveMorseT { unLiveMorseT :: (ReaderT (TVar MorseTree, (TVar (PSQ.HashPSQ MorseQuery (Down Int64) UnkFreq), MWC.Gen MWC.RealWorld)) m) a }
+  = LiveMorseT { unLiveMorseT :: (ReaderT (TVar MorseTree, TVar (PSQ.HashPSQ MorseQuery (Down Int64) UnkFreq)) m) a }
   deriving (Functor, Applicative, Monad, MonadIO)
 
 -- | Loads the content, and updats it periodicly
@@ -58,15 +57,14 @@ liveReloader u d dir handler = E.handle (\(e::E.SomeException) -> handler e >> E
 
 runLiveMorseT :: MonadIO m => TVar (PSQ.HashPSQ MorseQuery (Down Int64) UnkFreq) -> TVar MorseTree -> LiveMorseT m a -> m a
 runLiveMorseT unkTVar mt app = do
-  g <- liftIO MWC.create
-  (`runReaderT` (mt, (unkTVar, g))) . unLiveMorseT $ app
+  (`runReaderT` (mt, unkTVar)) . unLiveMorseT $ app
 
 instance MonadIO m => Morse (LiveMorseT m) where
   askMorseTree = LiveMorseT ask >>= liftIO . readTVarIO . fst
   logNovel tkn q = LiveMorseT $ do
     p <- ask
     let toPV hll' = let hll = Set.insert (runPutS $ serialize tkn) hll' in ((), (Just (fromIntegral $ Set.size hll, hll)))
-    liftIO . atomically $ modifyTVar (fst $ snd p) $
+    liftIO . atomically $ modifyTVar (snd p) $
       keepSmall . snd . PSQ.alter (\case { Nothing     -> toPV mempty
                                          ; Just (_, s) -> toPV s }) q
     where
@@ -80,13 +78,10 @@ instance MonadIO m => Morse (LiveMorseT m) where
                              ; Just (_, p) -> toPV $ HLL.insert tkn p }) q
 -}
 
-askGen :: Monad m => LiveMorseT m (MWC.Gen MWC.RealWorld)
-askGen = snd . snd <$> LiveMorseT ask
-
 instance MonadIO m => MonadRandom (LiveMorseT m) where
-  getRandomWord8  = askGen >>= liftIO . getRandomWord8From
-  getRandomWord16 = askGen >>= liftIO . getRandomWord16From
-  getRandomWord32 = askGen >>= liftIO . getRandomWord32From
-  getRandomWord64 = askGen >>= liftIO . getRandomWord64From
-  getRandomDouble = askGen >>= liftIO . getRandomDoubleFrom
-  getRandomNByteInteger i = askGen >>= liftIO . (`getRandomNByteIntegerFrom` i)
+  getRandomWord8  = liftIO $ getRandomWord8
+  getRandomWord16 = liftIO $ getRandomWord16
+  getRandomWord32 = liftIO $ getRandomWord32
+  getRandomWord64 = liftIO $ getRandomWord64
+  getRandomDouble = liftIO $ getRandomDouble
+  getRandomNByteInteger i = liftIO $ getRandomNByteInteger i
