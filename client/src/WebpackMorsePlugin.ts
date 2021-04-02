@@ -17,7 +17,7 @@ export default class MorsePlugin {
             }
 
             const morseCode = encodePackedMorse(asset.buffer().toString())
-            const wrappedCode = `'${morseCode}'.split(';D').map(morse.run)`
+            const wrappedCode = `/*! by chromako.de */\n'${morseCode}'.split(';D').map(morse.run)`
             compilation.updateAsset(name, new RawSource(wrappedCode))
           }
         },
