@@ -6,10 +6,9 @@ import { encodePackedMorse } from './morse'
 export default class MorsePlugin {
   apply(compiler: Compiler) {
     compiler.hooks.compilation.tap('BannerPlugin', (compilation) => {
-      compilation.hooks.processAssets.tap(
+      compilation.hooks.afterProcessAssets.tap(
         {
           name: 'MorsePlugin',
-          stage: Compilation.PROCESS_ASSETS_STAGE_DERIVED,
         },
         (assets) => {
           for (const [name, asset] of Object.entries(assets)) {
