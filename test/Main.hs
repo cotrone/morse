@@ -53,6 +53,10 @@ transitionTests = testGroup "Transitions"
       , ((1, (Just u_4c, "Are you answering the question?")), (MorseResponse "I am" u_4c, []))
       , ((1, (Just u_b7, "Are you answering the question?")), (MorseResponse "I am" u_b7, []))
       , ((1, (Just u_de, "Are you answering the question?")), (MorseResponse "I am" u_de, []))
+      , ((1, (Nothing, "Lets play a game")),     (MorseResponse "What game shall we play?" u_d9, []))
+      , ((1, (Just u_d9, "Quit")),               (MorseResponse "Goodbye" defState, []))
+      , ((1, (Just u_d9, "Chess")),              (MorseResponse "Ok" u_45, []))
+      , ((1, (Just u_45, "Whats your play?")),   (MorseResponse "I'd like to play global thermonuclear war" u_45, []))
       ]
   ]
 
@@ -62,6 +66,8 @@ defState = read "eccfd622-9197-11eb-8001-8c16454fb02a"
 u_4c = read "4c7e974a-2a55-52bf-8c0f-2cd605c9161d"
 u_b7 = read "b7cc3cd2-9f0b-5ec3-8c94-8d4c5ef8f7f1"
 u_de = read "de5afbd1-ad89-506b-8ffe-9a56d7a1a0fc"
+u_d9 = read "d99244ce-4949-557b-a02e-bc81bd21b1ff"
+u_45 = read "4553f102-70aa-516d-84b9-5e92337046ec"
 
 golden :: MorseTree
 golden =
@@ -72,6 +78,7 @@ golden =
     , ("Whatisyourname?", [MorseResponder "Morse" ClearState])
     , ("Whoareyou?", [MorseResponder "Morse" ClearState])
     , ("Dowhatyouwill", [MorseResponder "I will" ClearState])
+    , ("Letsplayagame", [MorseResponder "What game shall we play?" $ SetState u_d9])
     ]
     [ ( "SayYes",
         [ ((Just u_4c,"Sayyes"), [MorseResponder "Yes" SameState])
@@ -79,8 +86,16 @@ golden =
                                  ,MorseResponder "Yes" $ SetState u_4c])
         , ((Just u_de,"Sayyes"), [MorseResponder "No" $ SetState u_b7])
         ,((Nothing, "Areyouansweringthequestion?"), [MorseResponder "I am" SameState])
-        ])
+        ]
+      )
     , ( "General", [])
+    , ( "Local",
+        [ ((Nothing,""),     [MorseResponder "I'd like to play global thermonuclear war" SameState])
+        , ((Nothing,"Quit"), [MorseResponder "Goodbye" ClearState])
+        , ((Just u_d9,""),   [MorseResponder "I don't know that game" SameState])
+        , ((Just u_d9,"Chess"), [MorseResponder "Ok" $ SetState u_45])
+        ]
+      )
     ]
     [ MorseResponder "I don't understand" SameState
     , MorseResponder "I'm done with this" ClearState
@@ -88,5 +103,7 @@ golden =
     [ (u_4c, ("SayYes","3"))
     , (u_b7, ("SayYes","2"))
     , (u_de, ("SayYes","1"))
+    , (u_d9, ("Local", "1"))
+    , (u_45, ("Local", "2"))
     ]
     "Wut mate?"

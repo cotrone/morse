@@ -53,7 +53,12 @@ lookupMorse user q' = do
                  st <- fst q
                  tbl <- join $ ((`Map.lookup` tbls) . fst) <$> Map.lookup st sdc
                  -- Look it up directly, failing it that look up an open match in the table.
-                 Map.lookup q tbl <|> Map.lookup (Nothing, snd q) tbl)
+                 Map.lookup q tbl <|>
+                   Map.lookup (Nothing, snd q) tbl <|>
+                   -- And failing THAT, try a local confusion response, first state local, then table local.
+                   Map.lookup (fst q, "") tbl <|>
+                   Map.lookup (Nothing, "") tbl
+             )
          -- Try looking it up like its from an empty state.
          <|> (Map.lookup (snd q) opn)
       )

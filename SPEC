@@ -8,6 +8,7 @@ where:
    - '&' for matching any state in a given table only (Specific states are still prefered first).
    - some alphanumeric value to say it is continuing from a given state
   "Query" is what we're matching on from the user.
+   - if it is the empty string, we consider it to match on anything.
   "Response" is what we send back to the user.
   "Destination" is one of:
    - And alphanum that represents the resultant state after the interaction
@@ -22,6 +23,8 @@ We return a (Response, stat).
 For clarity, given a (State, Query) we, in order:
  - Look for (State, Query) in the table
  - Look for (match on any state in this table, Query)
+ - Look for (State, match any text) in this table.
+ - Look for (match any state in this table, match any text) in this table.
  - Look for (initial state, Query) in the the entire dialog tree
  - answer with a confusion response
 
