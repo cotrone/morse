@@ -1,0 +1,6 @@
+"From","Query","Response","Destination"
+*,"Lets play a game","What game shall we play?",1
+&,"Quit","Goodbye",!
+&,"","I'd like to play global thermonuclear war",-
+1,"","I don't know that game",-
+1,"Chess","Ok",2
