@@ -187,7 +187,7 @@ staticizeMorseTree (MorseTree { _mtDefState=defState, _mtOpeners=opn, _mtTables=
   , "openers" JS..= (Map.fromList $ bimap (Text.toLower . CI.original) Set.toList <$> Map.toList opn)
   , "tables" JS..= expandMorseTreeTable tbls
   , "confused" JS..= Set.toList cr
-  , "stateDecode" JS..= (fmap (fmap encodeStateDecode) $ Map.toList sdc)
+  , "stateDecode" JS..= (fmap encodeStateDecode sdc)
   , "defResp" JS..= defResp
   ]
   where
