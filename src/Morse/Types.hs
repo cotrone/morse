@@ -16,6 +16,7 @@ module Morse.Types
  , MorseResponse(..)
  , Morse(..)
  , MockMorse(..), runMockMorse
+ , staticizeMorseTree
  ) where
 
 import           Control.Monad.Reader
