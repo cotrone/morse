@@ -1,4 +1,6 @@
 packages: .
 
+allow-newer: random-source:base, tasty-test-vector:base
+
 package morse
   test-show-details:streaming

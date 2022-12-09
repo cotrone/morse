@@ -32,13 +32,23 @@ import           Data.Random.Source.StdGen
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Text (Text)
+import qualified Data.Text as Text
 import           Data.UUID (UUID)
+import qualified Data.UUID as UUID
+import qualified Data.CaseInsensitive as CI
+import Data.Bifunctor (bimap)
 
 data StateChange a
  = SameState
  | ClearState
  | SetState a
  deriving (Read, Show, Eq, Ord, Functor)
+
+instance JS.ToJSON a => JS.ToJSON (StateChange a) where
+  toJSON SameState = JS.String "-"
+  toJSON ClearState = JS.String "!"
+  toJSON (SetState a) = JS.toJSON a
+
 
 parseStateChange :: Text -> StateChange Text
 parseStateChange "-" = SameState
@@ -78,6 +88,13 @@ data MorseResponder
    , _mrTrans :: StateChange UUID
    }
  deriving (Read, Show, Eq, Ord)
+
+instance JS.ToJSON MorseResponder where
+  toJSON (MorseResponder stmt trans) =
+    JS.object [
+      "stmt" JS..= stmt
+    , "trans" JS..= trans
+    ]
 
 -- | For loading the rsp files.
 --   Not parameterized on the state token because we can only clear it or keep it the same,
@@ -161,3 +178,29 @@ instance MonadRandom MockMorse where
     getRandomWord64 = MockMorse $ getRandomWord64
     getRandomDouble = MockMorse $ getRandomDouble
     getRandomNByteInteger i = MockMorse $ getRandomNByteInteger i
+
+staticizeMorseTree :: MorseTree -> JS.Value
+staticizeMorseTree (MorseTree { _mtDefState=defState, _mtOpeners=opn, _mtTables=tbls, _mtConfused=cr, _mtStateDecode=sdc, _mtDefResp=defResp}) =
+  JS.object [
+    "defState" JS..= UUID.toText defState
+  , "openers" JS..= (Map.fromList $ bimap (Text.toLower . CI.original) Set.toList <$> Map.toList opn)
+  , "tables" JS..= expandMorseTreeTable tbls
+  , "confused" JS..= Set.toList cr
+  , "stateDecode" JS..= (fmap (fmap encodeStateDecode) $ Map.toList sdc)
+  , "defResp" JS..= defResp
+  ]
+  where
+    expandMorseTreeTable :: Map Table (Map MorseQueryCI (Set MorseResponder)) -> Map Text (Map Text (Map Text (Set MorseResponder)))
+    expandMorseTreeTable = fmap (Map.fromListWith (Map.unionWith Set.union) . fmap expandQuery . Map.toList)
+
+    -- Expand the query for so the responses for each state are in the contained map
+    expandQuery :: (MorseQueryCI, Set MorseResponder) -> (Text, Map Text (Set MorseResponder))
+    expandQuery ((Nothing, stmt), resps) = ("empty", Map.singleton (Text.toLower $ CI.original stmt) resps)
+    expandQuery ((Just st, stmt), resps) = (UUID.toText st, Map.singleton (Text.toLower $ CI.original stmt) resps)
+    
+    encodeStateDecode :: (Table, Text) -> JS.Value
+    encodeStateDecode (tbl, token) =
+      JS.object [
+        "table" JS..= tbl
+      , "token" JS..= token
+      ]
